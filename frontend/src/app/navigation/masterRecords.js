@@ -106,7 +106,21 @@ export const masterRecords = {
           path: path(ROOT_FORMS, "/inventory/warehouse/warehouse-item-mapping"),
           title: "Warehouse Item Mapping",
           transKey: "nav.master-records.warehouse-item-mapping",
-        }
+        },
+        {
+          id: "master-records.work-center-management",
+          type: NAV_TYPE_ITEM,
+          path: path(ROOT_FORMS, "/inventory/work-center/work-center-list"),
+          title: "Work Centers",
+          transKey: "nav.master-records.work-center-management",
+        },
+        {
+          id: "master-records.operation-management",
+          type: NAV_TYPE_ITEM,
+          path: path(ROOT_FORMS, "/inventory/operation/operation-list"),
+          title: "Operations",
+          transKey: "nav.master-records.operation-management",
+        },
       ],
     },
   ],

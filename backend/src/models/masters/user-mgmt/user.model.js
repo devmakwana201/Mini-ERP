@@ -475,4 +475,77 @@ module.exports = {
             return false;
         }
     },
+
+    /**
+     * Self-service signup — validates uniqueness and creates a new user account
+     * @param {object} data - { username, email, password }
+     */
+    signupUser: async ({ username, email, password }) => {
+        try {
+            // 1. Check username uniqueness (case-insensitive)
+            const existingUsername = await db.getResults(
+                `SELECT userid FROM usermaster WHERE LOWER(username) = LOWER(?) AND isdeleted = 0`,
+                [username]
+            );
+            if (existingUsername && existingUsername.length > 0) {
+                return { success: 0, status: 409, msg: `Login ID '${username}' is already taken. Please choose a different one.` };
+            }
+
+            // 2. Check email uniqueness (case-insensitive)
+            const existingEmail = await db.getResults(
+                `SELECT userid FROM usermaster WHERE LOWER(email) = LOWER(?) AND isdeleted = 0`,
+                [email]
+            );
+            if (existingEmail && existingEmail.length > 0) {
+                return { success: 0, status: 409, msg: `Email '${email}' is already registered. Please use a different email or login.` };
+            }
+
+            // 3. Hash password
+            const hashedPassword = await hashPassword(password, security.bcryptRounds);
+
+            // 4. Insert user (isapproved = 0: pending admin approval; isdeleted = 0)
+            const now = moment().format("YYYY-MM-DD HH:mm:ss");
+            const result = await db.insert('usermaster', {
+                username,
+                email: email.toLowerCase(),
+                password: hashedPassword,
+                firstname: username,   // default firstname = username until profile is updated
+                lastname: '',
+                isdeleted: 0,
+                createddate: now,
+                modifieddate: now,
+            });
+
+            if (!result || !result.insertId) {
+                return { success: 0, status: 500, msg: 'Failed to create account. Please try again.' };
+            }
+
+            winston.info('New user signed up successfully', {
+                source: 'user.model.js',
+                function: 'signupUser',
+                userId: result.insertId,
+                username,
+                email,
+            });
+
+            return {
+                success: 1,
+                status: 201,
+                msg: 'Account created successfully! You can now log in.',
+                data: { userId: result.insertId, username, email },
+            };
+        } catch (error) {
+            winston.error(`Error in signupUser: ${error.message}`, {
+                source: 'user.model.js',
+                function: 'signupUser',
+                error: error.message,
+                code: error.code,
+                stack: error.stack,
+            });
+            if (error.code === 'ER_DUP_ENTRY') {
+                return { success: 0, status: 409, msg: 'A user with this Login ID or Email already exists.' };
+            }
+            return { success: 0, status: 500, msg: error.message || 'Failed to create account.' };
+        }
+    },
 };

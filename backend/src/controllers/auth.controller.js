@@ -281,4 +281,43 @@ module.exports = {
             ResponseFormatter.success(null, "Password changed successfully")
         );
     }),
+
+    /**
+     * POST /api/v1/auth/signup
+     * Self-service user registration
+     * Validates: Login ID (unique, 6-12 chars), Email (unique), Password strength, Confirm match
+     */
+    userSignup: asyncHandler(async (req, res) => {
+        const { username, email, password } = req.body;
+
+        winston.info("User signup attempt", {
+            source: "auth.controller.js",
+            function: "userSignup",
+            endpoint: req.path,
+            method: req.method,
+            username,
+            email,
+        });
+
+        const result = await user.signupUser({ username, email, password });
+
+        if (result.success === 0) {
+            const statusCode = result.status || 400;
+            return res.status(statusCode).json(
+                ResponseFormatter.error(result.msg || "Signup failed", statusCode)
+            );
+        }
+
+        winston.info("User signup successful", {
+            source: "auth.controller.js",
+            function: "userSignup",
+            userId: result.data?.userId,
+            username,
+            email,
+        });
+
+        res.status(201).json(
+            ResponseFormatter.success(result.data, result.msg || "Account created successfully")
+        );
+    }),
 };

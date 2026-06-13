@@ -3343,6 +3343,115 @@ const validateQuery = (schema) => validateSchema(schema, "query");
  */
 const validateBody = (schema) => validateSchema(schema, "body");
 
+// ============================================================
+// Schema v3 — New Entity Validation Rules
+// ============================================================
+
+// Work Center
+validationRules.createWorkCenter = Joi.object({
+    name: Joi.string().min(1).max(150).trim().required(),
+    code: Joi.string().min(1).max(50).trim().required(),
+    description: Joi.string().max(65535).trim().optional().allow(null, ""),
+    capacity_per_day: Joi.number().precision(2).min(0).default(8.00).optional(),
+    cost_per_hour: Joi.number().precision(2).min(0).default(0.00).optional(),
+    is_active: Joi.boolean().default(true).optional(),
+});
+
+validationRules.updateWorkCenter = Joi.object({
+    name: Joi.string().min(1).max(150).trim().required(),
+    code: Joi.string().min(1).max(50).trim().required(),
+    description: Joi.string().max(65535).trim().optional().allow(null, ""),
+    capacity_per_day: Joi.number().precision(2).min(0).optional(),
+    cost_per_hour: Joi.number().precision(2).min(0).optional(),
+    is_active: Joi.boolean().optional(),
+});
+
+// Operation
+validationRules.createOperation = Joi.object({
+    work_center_id: Joi.number().integer().positive().required()
+        .messages({ "any.required": "Work Center ID is required" }),
+    name: Joi.string().min(1).max(150).trim().required(),
+    code: Joi.string().min(1).max(50).trim().required(),
+    description: Joi.string().max(65535).trim().optional().allow(null, ""),
+    duration_minutes: Joi.number().precision(2).min(0).default(0.00).optional(),
+    is_active: Joi.boolean().default(true).optional(),
+});
+
+validationRules.updateOperation = Joi.object({
+    work_center_id: Joi.number().integer().positive().required()
+        .messages({ "any.required": "Work Center ID is required" }),
+    name: Joi.string().min(1).max(150).trim().required(),
+    code: Joi.string().min(1).max(50).trim().required(),
+    description: Joi.string().max(65535).trim().optional().allow(null, ""),
+    duration_minutes: Joi.number().precision(2).min(0).optional(),
+    is_active: Joi.boolean().optional(),
+});
+
+// MO Component — manual add
+validationRules.createMOComponent = Joi.object({
+    product_id: Joi.number().integer().positive().required()
+        .messages({ "any.required": "Product ID is required" }),
+    qty_planned: Joi.number().precision(3).min(0.001).required()
+        .messages({
+            "any.required": "Planned quantity is required",
+            "number.min": "Planned quantity must be greater than 0",
+        }),
+    uom: Joi.string().max(20).trim().default("Unit").optional(),
+    bom_line_id: Joi.number().integer().positive().optional().allow(null),
+    notes: Joi.string().max(65535).trim().optional().allow(null, ""),
+    is_available: Joi.boolean().default(false).optional(),
+});
+
+// MO Component — update consumed qty
+validationRules.updateMOComponentConsumed = Joi.object({
+    qty_consumed: Joi.number().precision(3).min(0).required()
+        .messages({
+            "any.required": "Consumed quantity is required",
+            "number.min": "Consumed quantity cannot be negative",
+        }),
+});
+
+// ─── Auth — Sign Up ──────────────────────────────────────────────────────────
+validationRules.signupUser = Joi.object({
+    username: Joi.string()
+        .alphanum()
+        .min(6)
+        .max(12)
+        .trim()
+        .required()
+        .messages({
+            "string.alphanum": "Login ID can only contain letters and numbers",
+            "string.min": "Login ID must be between 6 and 12 characters",
+            "string.max": "Login ID must be between 6 and 12 characters",
+            "any.required": "Login ID is required",
+        }),
+    email: Joi.string()
+        .email()
+        .lowercase()
+        .trim()
+        .required()
+        .messages({
+            "string.email": "Please enter a valid email address",
+            "any.required": "Email is required",
+        }),
+    password: Joi.string()
+        .min(8)
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/)
+        .required()
+        .messages({
+            "string.min": "Password must be at least 8 characters long",
+            "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, and one special character",
+            "any.required": "Password is required",
+        }),
+    confirmPassword: Joi.any()
+        .valid(Joi.ref("password"))
+        .required()
+        .messages({
+            "any.only": "Passwords do not match",
+            "any.required": "Please re-enter your password",
+        }),
+});
+
 module.exports = {
     validateRequest,
     validateSchema,
@@ -3354,3 +3463,4 @@ module.exports = {
     sanitize,
     customValidators,
 };
+

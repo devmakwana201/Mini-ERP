@@ -212,6 +212,24 @@ export const useProtectedRoutes = () => {
                   ).default,
                 }),
               },
+              // ─── Work Centers ─────────────────────────────────────────
+              {
+                path: "inventory/work-center/work-center-list",
+                lazy: async () => ({
+                  Component: (
+                    await import("app/pages/masterRecords/inventory-management/work-center-management")
+                  ).default,
+                }),
+              },
+              // ─── Operations ───────────────────────────────────────────
+              {
+                path: "inventory/operation/operation-list",
+                lazy: async () => ({
+                  Component: (
+                    await import("app/pages/masterRecords/inventory-management/operation-management")
+                  ).default,
+                }),
+              },
             ],
           },
           // ─── Agro Dot ─────────────────────────────────────────────────

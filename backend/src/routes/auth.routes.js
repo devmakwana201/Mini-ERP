@@ -44,6 +44,17 @@ router.post("/change-password",
     auth.changePassword
 );
 
+/**
+ * @route   POST /api/v1/auth/signup
+ * @desc    Self-service user registration
+ * @access  Public
+ * @body    { username, email, password, confirmPassword }
+ */
+router.post("/signup",
+    validateBody(validationRules.signupUser),
+    auth.userSignup
+);
+
 module.exports = {
     path: "/auth",
     router: router,
