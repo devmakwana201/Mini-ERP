@@ -59,7 +59,10 @@ module.exports = {
             user: {
                 userId: userResp.data.userId,
                 email: userResp.data.email,
-                name: userResp.data.name,
+                userName: userResp.data.userName,
+                firstName: userResp.data.firstName,
+                lastName: userResp.data.lastName,
+                name: `${userResp.data.firstName || ''} ${userResp.data.lastName || ''}`.trim() || userResp.data.userName,
             },
             expiresIn: config.jwt.expiresIn,
         };

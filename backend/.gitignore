@@ -1,7 +1,33 @@
-package-lock.json
-.env
+# Dependencies
 /node_modules
+
+# Environment variables
+.env
+.env.*
+
+# Uploads & storage
 /uploads
 /src/uploads
 /db_backups
+
+# Logs
 /logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Lock file (optional - remove this line if you want to track it)
+package-lock.json
+
+# Build output
+/dist
+/build
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
