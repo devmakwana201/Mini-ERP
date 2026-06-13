@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>🔐 DB Backup Portal</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f7f9fb;
+                margin: 0;
+                padding: 40px;
+                color: #333;
+            }
+
+            .container {
+                max-width: 600px;
+                margin: auto;
+                background: white;
+                padding: 30px 40px;
+                border-radius: 12px;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+
+            h2 {
+                text-align: center;
+                margin-bottom: 20px;
+                color: #2c3e50;
+            }
+
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            label {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            input[type="password"] {
+                padding: 10px;
+                font-size: 16px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 16px;
+                background-color: #3498db;
+                border: none;
+                color: white;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background 0.2s ease-in-out;
+            }
+
+            button:hover {
+                background-color: #2980b9;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+                margin-top: 20px;
+            }
+
+            li {
+                background: #ecf0f1;
+                margin-bottom: 10px;
+                padding: 12px;
+                border-radius: 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            li a {
+                text-decoration: none;
+                color: #2c3e50;
+                font-weight: bold;
+                word-break: break-all;
+            }
+
+            li a:hover {
+                text-decoration: underline;
+            }
+
+            .file-icon {
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>🔐 DB Backup Portal</h2>
+
+            <% if (!isAuthenticated) { %>
+            <form method="POST" action="/db-backup">
+                <label for="token">Enter Access Token:</label>
+                <input type="password" name="token" id="token" required />
+                <button type="submit">🔓 Unlock</button>
+            </form>
+            <% } else { %>
+            <button onclick="createBackup()" style="margin-bottom: 20px;">🔄 Create New Backup</button>
+            <h3>📁 Available Backups</h3>
+            <ul>
+                <% backups.forEach(file => { %>
+                <li>
+                    <a
+                        href="/api/v1/db-backup/download/<%= file %>?token=<%= token %>"
+                        target="_blank"
+                    >
+                        📄 <%= file %>
+                    </a>
+                </li>
+                <% }); %>
+            </ul>
+            <% } %>
+        </div>
+        
+        <script>
+            async function createBackup() {
+                <% if (typeof token !== 'undefined') { %>
+                const token = '<%= token %>';
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = '⏳ Creating backup...';
+                
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+                    
+                    const response = await fetch(`/api/v1/db-backup/backupdb?token=${token}`, {
+                        method: 'POST',
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('✅ ' + result.msg);
+                        location.reload();
+                    } else {
+                        const errorMsg = result.msg || 'Unknown error';
+                        const details = result.details ? '\n\nDetails: ' + result.details : '';
+                        alert('❌ Error: ' + errorMsg + details);
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        alert('❌ Backup operation timed out. It may still be running in the background.');
+                    } else {
+                        alert('❌ Error creating backup: ' + error.message);
+                    }
+                } finally {
+                    button.disabled = false;
+                    button.textContent = '🔄 Create New Backup';
+                }
+                <% } else { %>
+                alert('❌ Token not available');
+                <% } %>
+            }
+        </script>
+    </body>
+</html>

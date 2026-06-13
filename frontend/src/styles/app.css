@@ -1,0 +1,138 @@
+.prime-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  padding: 1rem 1rem 1rem 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--card-shadow);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+/* in your global css */
+.label-default {
+  @apply mb-2 block font-semibold;
+}
+
+.p-dropdown-clear-icon,
+.p-dropdown-filter-icon,
+.p-dropdown-filter-clear-icon {
+  right: 3rem !important;
+}
+
+/* InputTextarea {
+  resize: none !important; 
+  overflow: hidden !important;
+  min-height: 100px !important; 
+  max-height: 200px !important; 
+  height: auto !important;
+
+} */
+.p-stepper .p-stepper-panels {
+  background: none !important;
+  padding: 0.5rem !important;
+  color: inherit !important;
+}
+
+.p-stepper .p-stepper-header .p-stepper-action {
+  background: none !important;
+}
+
+.p-stepper-title {
+  text-wrap: auto;
+}
+
+.p-stepper .p-stepper-header .p-stepper-action {
+  max-width: 300px;
+  width: 180px;
+}
+
+.p-stepper-separator {
+  margin-top: 15px;
+}
+.p-chips-multiple-container {
+  padding: 5.8px 13px !important;
+}
+
+.p-chips-input-token input {
+  padding-left: 14px !important;
+}
+
+.editable-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border-radius: 50%;
+}
+
+.editable-table th,
+.editable-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  min-width: 150px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  vertical-align: top;
+}
+
+.editable-table td[contenteditable="true"]:focus {
+  outline: 2px solid #007bff;
+  background-color: #f0f8ff;
+}
+
+.p-skeleton {
+  background-color: #d7e7db;
+}
+
+.p-stepper .p-stepper-panels {
+  padding: 0rem !important;
+}
+
+.p-overlaypanel .p-overlaypanel-content {
+  padding: 0.8rem;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+}
+
+.p-datatable .p-datatable-tbody > tr.highlight-row {
+  background-color: #e7f3ff;
+}
+
+/* Optional: Adds a smooth transition effect to all rows */
+.p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.2s ease-in-out;
+}
+
+
+/* Resize PrimeReact Toast on small screens */
+@media (max-width: 640px) {
+  .p-toast {
+    max-width: 90% !important;
+  }
+
+  .p-toast-message {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .p-toast-message .p-toast-message-text {
+    font-size: 0.8rem !important;
+  }
+
+  .p-toast-message .p-toast-icon-close {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}

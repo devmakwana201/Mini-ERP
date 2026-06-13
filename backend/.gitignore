@@ -1,0 +1,7 @@
+package-lock.json
+.env
+/node_modules
+/uploads
+/src/uploads
+/db_backups
+/logs

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/ico" href="/images/appLogo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agro Manager</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <noscript>
+      <style>
+        #root { display: none; }
+      </style>
+      <div style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+      ">
+        <div style="
+          text-align: center;
+          padding: 2rem;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          max-width: 400px;
+        ">
+          <h2 style="color: #e74c3c; margin-bottom: 1rem;">JavaScript Required</h2>
+          <p style="color: #666; line-height: 1.6;">
+            Please enable JavaScript in your browser for a better experience. 
+            This website requires JavaScript to function properly.
+          </p>
+          <!-- Browser-specific links -->
+          <div style="border-top: 1px solid #eee;">
+            <p style="color: #888; font-size: 12px; margin-bottom: 8px; font-weight: 500;">Manual Instructions:</p>
+            <p style="color: #666; font-size: 12px; line-height: 1.4;">
+              <strong>Chrome:</strong> Settings → Privacy → Site Settings → JavaScript<br>
+              <strong>Firefox:</strong> about:config → javascript.enabled → true<br>
+              <strong>Safari:</strong> Preferences → Security → Enable JavaScript
+            </p>
+          </div>
+        </div>
+      </div>
+    </noscript>
+  </body>
+</html>

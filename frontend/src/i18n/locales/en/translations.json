@@ -1,0 +1,118 @@
+{
+  "nav": {
+    "dashboards": {
+      "dashboards": "Dashboards",
+      "home": "Home",
+      "sales-dashboard": "Sales Dashboard",
+      "purchase-dashboard": "Purchase Dashboard"
+    },
+    "agroDot": {
+      "agroDot": "Agro Dot",
+      "dispatch": "Dispatch",
+      "offers": "Offer / Scheme",
+      "price-policy": "Price Policy"
+    },
+    "master-records": {
+      "master-records": "Master Records",
+      "user": "User",
+      "roles": "Roles",
+      "role": "Role",
+      "permission": "Permission",
+      "inventory-management": "Inventory Management",
+      "item-management": "Item Management",
+      "item-category-management": "Item Category Management",
+      "supplier-management": "Supplier Management",
+      "uom-management": "UOM Management",
+      "brand-management": "Brand Management",
+      "warehouse-management": "Warehouse Management",
+      "warehouse-item-mapping": "Warehouse Item Mapping"
+    },
+    "reports": {
+      "reports": "Reports",
+      "purchase-reports": "Purchase Reports",
+      "product-wise-purchase": "Product Wise Purchase",
+      "product-category-wise-purchase": "Product Category Wise Purchase",
+      "purchase-order": "Purchase Order",
+      "supplier-ledger": "Supplier Ledger",
+      "supplier-purchase-summary": "Supplier Purchase Summary",
+      "creditor-report": "Creditor Report",
+      "daily-purchase-summary": "Daily Purchase Summary",
+      "price-deviation": "Price Deviation",
+      "sales-reports": "Sales Reports",
+      "category-sales-summary": "Category Sales Summary",
+      "customer-sales-summary": "Customer Sales Summary",
+      "daily-sales-summary": "Daily Sales Summary",
+      "debtor-report": "Debtor Report",
+      "discount-report": "Discount Report",
+      "order-cancellation": "Order Cancellation",
+      "order-summary": "Order Summary",
+      "product-cancellation": "Product Cancellation",
+      "product-sales-summary": "Product Sales Summary",
+      "product-summary": "Product Summary",
+      "product-wise-order-details": "Product Wise Order Details",
+      "sales-receipt": "Sales Receipt",
+      "sales-summary": "Sales Summary",
+      "stock-reports": "Stock Reports",
+      "current-stock-report": "Current Stock Report",
+      "daywise-stock-details": "Daywise Stock Details",
+      "reorder-level": "Reorder Level",
+      "stock-adjustment-report": "Stock Adjustment Report"
+    },
+    "procurement": {
+      "procurement": "Procurement",
+      "purchase-order": "Purchase Order",
+      "create-po": "Create PO"},
+      
+    "incoming-goods": {
+      "incoming-goods": "Incoming Goods",
+      "delivery-receipt": "Delivery Receipt",
+      "grn": "GRN",
+      "credit-notes-received": "Credit Notes (Received)"
+    },
+    "approvals": {
+      "approvals": "Approvals",
+      "manage-approvals": "Manage Approvals"
+    },
+    "subscription-management": {
+      "subscription-management": "Subscription Management",
+      "companies-management": "Companies Management",
+      "plans-management": "Plans Management",
+      "addons-management": "Addons Management",
+      "particulars-management": "Particulars Management",
+      "company-addons": "Company Addons"
+    },
+    "general-configurations": {
+      "general-configurations": "General Configurations",
+      "serialkey-management": "Serialkey Management",
+      "generate-key": "Generate key",
+      "report": "Report"
+    },
+    "sales-order": {
+      "sales-order": "Sales Order",
+      "invoice": "Order Invoice",
+      "direct-generation": "Direct SO Generation",
+      "po-generation": "From PO Generation",
+      "deliver-products": "Deliver Products"
+    },
+    "sales-panel": {
+      "sales": "Sales",
+      "invoice": "Invoice"
+    },
+    "finance-panel": {
+      "finance": "Finance",
+      "invoice": "Invoice",
+      "payment-tracking": "Payment Tracking"
+    },
+    "settings": {
+      "settings": "Settings",
+      "general": "General",
+      "appearance": "Appearance"
+    },
+    "agro-dot": {
+      "agro-dot": "Agro Dot",
+      "customer-issues": "Customer Issues",
+      "grn-issues": "GRN Issues",
+      "credit-notes": "Credit Notes"
+    }
+  }
+}

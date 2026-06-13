@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "dashboards": {
+      "dashboards": "لوحات التحكم",
+      "home": "الرئيسية",
+      "sales-dashboard": "لوحة المبيعات",
+      "purchase-dashboard": "لوحة المشتريات"
+    },
+    "master-records": {
+      "master-records": "السجلات الرئيسية",
+      "user": "المستخدم",
+      "roles": "الأدوار",
+      "role": "الدور",
+      "permission": "الصلاحية",
+      "inventory-management": "إدارة المخزون",
+      "item-management": "إدارة الأصناف",
+      "item-category-management": "إدارة فئات الأصناف",
+      "supplier-management": "إدارة الموردين",
+      "uom-management": "إدارة وحدات القياس",
+      "brand-management": "إدارة العلامات التجارية",
+      "warehouse-management": "إدارة المستودعات",
+      "warehouse-item-mapping": "ربط أصناف المستودع"
+    },
+    "reports": {
+      "reports": "التقارير",
+      "purchase-reports": "تقارير المشتريات",
+      "product-wise-purchase": "الشراء حسب المنتج",
+      "product-category-wise-purchase": "الشراء حسب فئة المنتج",
+      "purchase-order": "أمر الشراء",
+      "supplier-ledger": "دفتر المورد",
+      "supplier-purchase-summary": "ملخص مشتريات المورد",
+      "creditor-report": "تقرير الدائنين",
+      "daily-purchase-summary": "ملخص المشتريات اليومي",
+      "price-deviation": "انحراف السعر",
+      "sales-reports": "تقارير المبيعات",
+      "category-sales-summary": "ملخص مبيعات الفئات",
+      "customer-sales-summary": "ملخص مبيعات العملاء",
+      "daily-sales-summary": "ملخص المبيعات اليومي",
+      "debtor-report": "تقرير المدينين",
+      "discount-report": "تقرير الخصومات",
+      "order-cancellation": "إلغاء الطلب",
+      "order-summary": "ملخص الطلب",
+      "product-cancellation": "إلغاء المنتج",
+      "product-sales-summary": "ملخص مبيعات المنتج",
+      "product-wise-order-details": "تفاصيل الطلب حسب المنتج",
+      "sales-receipt": "إيصال المبيعات",
+      "sales-summary": "ملخص المبيعات",
+      "stock-reports": "تقارير المخزون",
+      "current-stock-report": "تقرير المخزون الحالي",
+      "daywise-stock-details": "تفاصيل المخزون اليومية",
+      "reorder-level": "مستوى إعادة الطلب",
+      "stock-adjustment-report": "تقرير تسوية المخزون"
+    },
+    "procurement": {
+      "procurement": "المشتريات",
+      "purchase-order": "أمر الشراء",
+      "create-po": "إنشاء أمر شراء"
+    },
+    "incoming-goods": {
+      "incoming-goods": "البضائع الواردة",
+      "delivery-receipt": "إيصال التسليم",
+      "grn": "إشعار استلام البضاعة",
+      "credit-notes-received": "إشعارات دائن مستلمة"
+    },
+    "agroDot": {
+      "agroDot": "Agro Dot",
+      "dispatch": "Dispatch",
+      "offers": "Offer / Scheme",
+      "price-policy": "Price Policy"
+    },
+    "approvals": {
+      "approvals": "الموافقات",
+      "manage-approvals": "إدارة الموافقات"
+    },
+    "subscription-management": {
+      "subscription-management": "إدارة الاشتراكات",
+      "companies-management": "إدارة الشركات",
+      "plans-management": "إدارة الخطط",
+      "addons-management": "إدارة الإضافات",
+      "particulars-management": "إدارة التفاصيل",
+      "company-addons": "إضافات الشركة"
+    },
+    "general-configurations": {
+      "general-configurations": "الإعدادات العامة",
+      "serialkey-management": "إدارة المفاتيح التسلسلية",
+      "generate-key": "إنشاء مفتاح",
+      "report": "تقرير"
+    },
+    "settings": {
+      "settings": "الإعدادات",
+      "general": "عام",
+      "appearance": "المظهر"
+    },
+    "agro-dot": {
+      "agro-dot": "Agro Dot",
+      "customer-issues": "Customer Issues",
+      "grn-issues": "GRN Issues",
+      "credit-notes": "Credit Notes"
+    }
+  }
+}
