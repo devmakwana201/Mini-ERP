@@ -27,7 +27,7 @@ export default function PartnerForm() {
       setLoading(true);
       PartnerService.getById(id).then((res) => {
         if (res.success) {
-          const p = res.data.data;
+          const p = res.data;
           setForm({
             name: p.name || "", email: p.email || "", phone: p.phone || "",
             address: p.address || "", city: p.city || "", state: p.state || "",
@@ -163,3 +163,4 @@ export default function PartnerForm() {
     </div>
   );
 }
+

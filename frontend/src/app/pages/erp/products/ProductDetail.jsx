@@ -30,8 +30,8 @@ export default function ProductDetail() {
       ProductService.getById(id),
       InventoryService.getLedger(id),
     ]);
-    if (pRes.success) setProduct(pRes.data.data);
-    if (lRes.success) setLedger(lRes.data.data?.ledger || []);
+    if (pRes.success) setProduct(pres.data);
+    if (lRes.success) setLedger(lres.data?.ledger || []);
     setLoading(false);
   };
 
@@ -144,3 +144,4 @@ export default function ProductDetail() {
     </div>
   );
 }
+

@@ -22,6 +22,7 @@ const {
 const { initializeCleanup, stopCleanup } = require("./jobs/cleanup-cron");
 const { initializeBackup, stopBackup } = require("./jobs/backup-db");
 const { initializeTokenCleanup, stopTokenCleanup } = require("./jobs/token-cleanup");
+const { initializeProcurementCron, stopProcurementCron } = require("./jobs/procurement-cron");
 
 // Validate configuration on startup
 const { validateConfig } = require("./config/config");
@@ -369,6 +370,7 @@ const server = app.listen(serverConfig.port, () => {
 let cleanupTask = null;
 let backupTask = null;
 let tokenCleanupTask = null;
+let procurementTask = null;
 
 try {
     cleanupTask = initializeCleanup();
@@ -427,6 +429,22 @@ try {
     });
 }
 
+try {
+    procurementTask = initializeProcurementCron();
+    console.log("✅ Procurement cron initialized - runs daily at 6:00 AM IST");
+    winston.info("Procurement cron initialized - runs daily at 6:00 AM IST", {
+        source: "server.js",
+        function: "initializeProcurementCron"
+    });
+} catch (error) {
+    console.error("❌ Failed to initialize procurement cron:", error);
+    winston.error(`Failed to initialize procurement cron: ${error.message}`, {
+        source: "server.js",
+        function: "initializeProcurementCron",
+        error: error.message
+    });
+}
+
 // Graceful shutdown handling
 let isShuttingDown = false;
 
@@ -476,6 +494,15 @@ const gracefulShutdown = (signal) => {
                 errno: error.errno,
                 stack: error.stack
             });
+        }
+    }
+
+    if (procurementTask) {
+        try {
+            stopProcurementCron(procurementTask);
+            console.log("✅ Procurement cron stopped");
+        } catch (error) {
+            console.error("❌ Error stopping procurement cron:", error);
         }
     }
 

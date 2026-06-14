@@ -5,6 +5,7 @@ export const responseHandler = {
         success: true,
         data: response.data.data,
         message: response.data.message,
+        ...(response.data.pagination && { pagination: response.data.pagination }),
         ...(response.data.meta && { meta: response.data.meta }),
         timestamp: response.data.timestamp,
       };

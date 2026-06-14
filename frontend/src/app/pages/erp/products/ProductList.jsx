@@ -33,8 +33,8 @@ export default function ProductList() {
     if (productType) params.product_type = productType;
     const res = await ProductService.getAll(params);
     if (res.success) {
-      setProducts(res.data.data || []);
-      setTotal(res.data.pagination?.total || 0);
+      setProducts(res.data || []);
+      setTotal(res.pagination?.total || 0);
     }
     setLoading(false);
   };
@@ -108,3 +108,4 @@ export default function ProductList() {
     </div>
   );
 }
+

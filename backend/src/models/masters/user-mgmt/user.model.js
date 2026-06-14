@@ -14,7 +14,7 @@ module.exports = {
     findUser: async (email, password) => {
         try {
             let res = await db.getResults(
-                `SELECT userid AS userId, username AS userName, firstname AS firstName, lastname as lastName, email, password FROM usermaster WHERE LOWER(email) = LOWER(?) and isdeleted=0`,
+                `SELECT user_id AS userId, name AS userName, name AS firstName, '' AS lastName, email, password_hash AS password FROM users WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
                 [email]
             );
             if (!res?.length) return { success: 0, msg: "User not found" };
@@ -37,7 +37,7 @@ module.exports = {
     checkUserExists: async (email) => {
         try {
             const res = await db.getResults(
-                `SELECT userid FROM usermaster WHERE LOWER(email) = LOWER(?) AND isdeleted = 0`,
+                `SELECT user_id FROM users WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
                 [email]
             );
             return res && res.length > 0;
@@ -64,9 +64,6 @@ module.exports = {
                 token: token,
                 expiry: moment.unix(decoded.exp).format("YYYY-MM-DD HH:mm:ss"),
             };
-            
-            // Remove old tokens for this user
-            // await db.getResults(`DELETE FROM user_jwt_tokens WHERE userid = ?`, [userId]);
             
             // Insert new token
             const result = await db.insert('user_jwt_tokens', userTokenObj);
@@ -100,7 +97,7 @@ module.exports = {
     updateLogs: async (userId) => {
         try {
             await db.getResults(
-                `UPDATE logmst SET logOut = ? WHERE userId = ? ORDER BY logId DESC LIMIT 1`,
+                `UPDATE logmst SET logOut = ? WHERE userid = ? ORDER BY logId DESC LIMIT 1`,
                 [moment().format("YYYY-MM-DD HH:mm:ss"), userId]
             );
         } catch (error) {
@@ -108,9 +105,6 @@ module.exports = {
                 source: "user.model.js",
                 function: "updateLogs",
                 error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack,
                 userId: userId
             });
         }
@@ -120,12 +114,12 @@ module.exports = {
      * Get users with pagination and filtering
      */
     getUsers: async (req) => {
-        const { start = 0, length = 10, filters, sortField = 'userid', sortOrder = 'desc' } = req.query;
+        const { start = 0, length = 10, filters, sortField = 'user_id', sortOrder = 'desc' } = req.query;
 
         let sql = `
-            SELECT userid, username, firstname, lastname, email, createdby, createddate, modifedby, modifieddate, isdeleted, ipaddress
-            FROM usermaster
-            WHERE isdeleted = 0
+            SELECT user_id AS userid, name AS username, name AS firstname, '' AS lastname, email, created_by AS createdby, created_at AS createddate, updated_by AS modifedby, updated_at AS modifieddate, is_deleted AS isdeleted
+            FROM users
+            WHERE is_deleted = 0
         `;
 
         const params = [];
@@ -149,25 +143,46 @@ module.exports = {
         };
 
         // Apply filters
-        const filterFields = ['username', 'firstname', 'lastname', 'email'];
-        filterFields.forEach(field => {
-            const value = getFilterValue(field);
-            if (value) {
-                sql += ` AND ${field} LIKE ?`;
-                params.push(`%${value}%`);
-            }
-        });
+        const username = getFilterValue('username');
+        if (username) {
+            sql += ` AND name LIKE ?`;
+            params.push(`%${username}%`);
+        }
+        const firstname = getFilterValue('firstname');
+        if (firstname) {
+            sql += ` AND name LIKE ?`;
+            params.push(`%${firstname}%`);
+        }
+        const lastname = getFilterValue('lastname');
+        if (lastname) {
+            sql += ` AND name LIKE ?`;
+            params.push(`%${lastname}%`);
+        }
+        const email = getFilterValue('email');
+        if (email) {
+            sql += ` AND email LIKE ?`;
+            params.push(`%${email}%`);
+        }
 
         const global = getFilterValue("global");
         if (global) {
-            sql += ` AND (username LIKE ? OR firstname LIKE ? OR lastname LIKE ? OR email LIKE ?)`;
+            sql += ` AND (name LIKE ? OR email LIKE ?)`;
             const g = `%${global}%`;
-            params.push(g, g, g, g);
+            params.push(g, g);
         }
 
-        // Sorting
+        // Sorting map
+        let orderField = 'user_id';
+        if (sortField === 'username' || sortField === 'firstname') {
+            orderField = 'name';
+        } else if (sortField === 'email') {
+            orderField = 'email';
+        } else if (sortField === 'createddate') {
+            orderField = 'created_at';
+        }
+
         const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-        sql += ` ORDER BY ${sortField} ${order}`;
+        sql += ` ORDER BY ${orderField} ${order}`;
 
         // Pagination using start and length
         const startNum = parseInt(start);
@@ -181,22 +196,31 @@ module.exports = {
         const data = await db.getResults(sql, params);
 
         // Count total records
-        let countSql = `SELECT COUNT(*) as total FROM usermaster WHERE isdeleted = 0`;
+        let countSql = `SELECT COUNT(*) as total FROM users WHERE is_deleted = 0`;
         let countParams = [];
 
         // Apply same filters for count
-        filterFields.forEach(field => {
-            const value = getFilterValue(field);
-            if (value) {
-                countSql += ` AND ${field} LIKE ?`;
-                countParams.push(`%${value}%`);
-            }
-        });
+        if (username) {
+            countSql += ` AND name LIKE ?`;
+            countParams.push(`%${username}%`);
+        }
+        if (firstname) {
+            countSql += ` AND name LIKE ?`;
+            countParams.push(`%${firstname}%`);
+        }
+        if (lastname) {
+            countSql += ` AND name LIKE ?`;
+            countParams.push(`%${lastname}%`);
+        }
+        if (email) {
+            countSql += ` AND email LIKE ?`;
+            countParams.push(`%${email}%`);
+        }
 
         if (global) {
-            countSql += ` AND (username LIKE ? OR firstname LIKE ? OR lastname LIKE ? OR email LIKE ?)`;
+            countSql += ` AND (name LIKE ? OR email LIKE ?)`;
             const g = `%${global}%`;
-            countParams.push(g, g, g, g);
+            countParams.push(g, g);
         }
 
         const totalResult = await db.getResults(countSql, countParams);
@@ -217,19 +241,13 @@ module.exports = {
      * Get user data by ID
      */
     getData: async (id) => {
-        const sql = `SELECT um.userid,um.username,um.firstname,um.lastname,um.email
-            FROM usermaster um WHERE um.userid = ? AND um.isdeleted = 0`;
+        const sql = `SELECT user_id AS userid, name AS username, name AS firstname, '' AS lastname, email
+            FROM users WHERE user_id = ? AND is_deleted = 0`;
         const results = await db.getResults(sql, [id]);
 
         if (results.length === 0) return [];
 
-        const user = results[0];
-        const BASE_URL = `${server.baseUrl}:${server.port}`;
-        // if (user.profilepic) {
-        //     user.profilepic = `${BASE_URL}${user.profilepic}`;
-        // }
-
-        return [user];
+        return [results[0]];
     },
 
     /**
@@ -238,28 +256,34 @@ module.exports = {
     create: async (data) => {
         try {
             // Hash password if provided
-            if (data.password) {
-                data.password = await hashPassword(data.password, security.bcryptRounds);
+            let hashedPassword = data.password;
+            if (data.password && !data.password.startsWith('$2b$')) {
+                hashedPassword = await hashPassword(data.password, security.bcryptRounds);
             }
             
-            // Add timestamps
-            data.createddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            data.modifieddate = moment().format("YYYY-MM-DD HH:mm:ss");
+            const dbData = {
+                role_id: 2, // Default: Sales User
+                name: `${data.firstname || ''} ${data.lastname || ''}`.trim() || data.username,
+                email: data.email.toLowerCase(),
+                password_hash: hashedPassword,
+                status: 'active',
+                is_deleted: 0,
+                created_by: data.createdby || null,
+                created_at: data.createddate || moment().format("YYYY-MM-DD HH:mm:ss"),
+                updated_by: data.modifedby || null,
+                updated_at: data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss")
+            };
             
-            const result = await db.insert('usermaster', data);
+            const result = await db.insert('users', dbData);
             if (!result.insertId) {
                 return { status: 500, success: 0, msg: "Failed to create user" };
             }
-            
-            // Remove password from response data
-            const responseData = { ...data };
-            delete responseData.password;
             
             return { 
                 status: 201, 
                 success: 1, 
                 msg: "User created successfully",
-                data: { userId: result.insertId, ...responseData }
+                data: { userId: result.insertId, ...data }
             };
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
@@ -274,31 +298,35 @@ module.exports = {
      */
     update: async (id, data) => {
         try {
-            // Hash password if provided
-            if (data.password) {
-                data.password = await hashPassword(data.password, security.bcryptRounds);
+            const dbUpdates = {};
+            if (data.firstname !== undefined || data.lastname !== undefined || data.username !== undefined) {
+                const name = `${data.firstname || ''} ${data.lastname || ''}`.trim() || data.username;
+                if (name) dbUpdates.name = name;
             }
+            if (data.email !== undefined) dbUpdates.email = data.email.toLowerCase();
+            if (data.password !== undefined) {
+                let hashedPassword = data.password;
+                if (!data.password.startsWith('$2b$')) {
+                    hashedPassword = await hashPassword(data.password, security.bcryptRounds);
+                }
+                dbUpdates.password_hash = hashedPassword;
+            }
+            if (data.modifedby !== undefined) dbUpdates.updated_by = data.modifedby;
+            dbUpdates.updated_at = data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss");
             
-            // Add modified timestamp
-            data.modifieddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            
-            const result = await db.update('usermaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'userid', value: id }, { column: 'isdeleted', value: 0 }]
+            const result = await db.update('users', 
+                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
+                [{ column: 'user_id', value: id }, { column: 'is_deleted', value: 0 }]
             );
             if (!result.affectedRows) {
                 return { status: 404, success: 0, msg: "User not found" };
             }
             
-            // Remove password from response data
-            const responseData = { ...data };
-            delete responseData.password;
-            
             return { 
                 status: 200, 
                 success: 1, 
                 msg: "User updated successfully",
-                data: { userId: id, ...responseData }
+                data: { userId: id, ...data }
             };
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
@@ -313,9 +341,14 @@ module.exports = {
      */
     delete: async (id, data) => {
         try {
-            const result = await db.update('usermaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'userid', value: id }]
+            const dbUpdates = {
+                is_deleted: 1,
+                updated_by: data.modifedby,
+                updated_at: data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss")
+            };
+            const result = await db.update('users', 
+                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
+                [{ column: 'user_id', value: id }]
             );
             if (!result.affectedRows) {
                 return { status: 500, success: 0, msg: "User not found" };
@@ -350,9 +383,6 @@ module.exports = {
                 source: "user.model.js",
                 function: "savePasswordResetToken",
                 error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack,
                 email: email
             });
             return false;
@@ -370,7 +400,7 @@ module.exports = {
             );
             
             if (result.length === 0) {
-                return null; // Token not found or expired
+                return null;
             }
             
             return {
@@ -382,9 +412,6 @@ module.exports = {
                 source: "user.model.js",
                 function: "verifyPasswordResetToken",
                 error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack,
                 token: token
             });
             return null;
@@ -403,9 +430,6 @@ module.exports = {
                 source: "user.model.js",
                 function: "clearPasswordResetToken",
                 error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack,
                 email: email
             });
             return false;
@@ -419,7 +443,7 @@ module.exports = {
         try {
             const hashedPassword = await hashPassword(newPassword, security.bcryptRounds);
             const result = await db.getResults(
-                `UPDATE usermaster SET password = ?, modifieddate = ? WHERE email = ? AND isdeleted = 0`,
+                `UPDATE users SET password_hash = ?, updated_at = ? WHERE email = ? AND is_deleted = 0`,
                 [hashedPassword, moment().format("YYYY-MM-DD HH:mm:ss"), email]
             );
             
@@ -436,7 +460,7 @@ module.exports = {
         try {
             const hashedPassword = await hashPassword(newPassword, security.bcryptRounds);
             const result = await db.getResults(
-                `UPDATE usermaster SET password = ?, modifieddate = ? WHERE userid = ? AND isdeleted = 0`,
+                `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ? AND is_deleted = 0`,
                 [hashedPassword, moment().format("YYYY-MM-DD HH:mm:ss"), userId]
             );
             
@@ -452,7 +476,7 @@ module.exports = {
     verifyPassword: async (userId, currentPassword) => {
         try {
             const result = await db.getResults(
-                `SELECT password FROM usermaster WHERE userid = ? AND isdeleted = 0`,
+                `SELECT password_hash AS password FROM users WHERE user_id = ? AND is_deleted = 0`,
                 [userId]
             );
             
@@ -467,9 +491,6 @@ module.exports = {
                 source: "user.model.js",
                 function: "verifyPassword",
                 error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack,
                 userId: userId
             });
             return false;
@@ -477,74 +498,48 @@ module.exports = {
     },
 
     /**
-     * Self-service signup — validates uniqueness and creates a new user account
-     * @param {object} data - { username, email, password }
+     * Self-service signup
      */
     signupUser: async ({ username, email, password }) => {
         try {
-            // 1. Check username uniqueness (case-insensitive)
-            const existingUsername = await db.getResults(
-                `SELECT userid FROM usermaster WHERE LOWER(username) = LOWER(?) AND isdeleted = 0`,
-                [username]
-            );
-            if (existingUsername && existingUsername.length > 0) {
-                return { success: 0, status: 409, msg: `Login ID '${username}' is already taken. Please choose a different one.` };
-            }
-
-            // 2. Check email uniqueness (case-insensitive)
             const existingEmail = await db.getResults(
-                `SELECT userid FROM usermaster WHERE LOWER(email) = LOWER(?) AND isdeleted = 0`,
+                `SELECT user_id FROM users WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
                 [email]
             );
             if (existingEmail && existingEmail.length > 0) {
-                return { success: 0, status: 409, msg: `Email '${email}' is already registered. Please use a different email or login.` };
+                return { success: 0, status: 409, msg: `Email '${email}' is already registered.` };
             }
 
-            // 3. Hash password
             const hashedPassword = await hashPassword(password, security.bcryptRounds);
 
-            // 4. Insert user (isapproved = 0: pending admin approval; isdeleted = 0)
             const now = moment().format("YYYY-MM-DD HH:mm:ss");
-            const result = await db.insert('usermaster', {
-                username,
+            const result = await db.insert('users', {
+                role_id: 2,
+                name: username,
                 email: email.toLowerCase(),
-                password: hashedPassword,
-                firstname: username,   // default firstname = username until profile is updated
-                lastname: '',
-                isdeleted: 0,
-                createddate: now,
-                modifieddate: now,
+                password_hash: hashedPassword,
+                status: 'active',
+                is_deleted: 0,
+                created_at: now,
+                updated_at: now,
             });
 
             if (!result || !result.insertId) {
-                return { success: 0, status: 500, msg: 'Failed to create account. Please try again.' };
+                return { success: 0, status: 500, msg: 'Failed to create account.' };
             }
-
-            winston.info('New user signed up successfully', {
-                source: 'user.model.js',
-                function: 'signupUser',
-                userId: result.insertId,
-                username,
-                email,
-            });
 
             return {
                 success: 1,
                 status: 201,
-                msg: 'Account created successfully! You can now log in.',
+                msg: 'Account created successfully!',
                 data: { userId: result.insertId, username, email },
             };
         } catch (error) {
             winston.error(`Error in signupUser: ${error.message}`, {
                 source: 'user.model.js',
                 function: 'signupUser',
-                error: error.message,
-                code: error.code,
-                stack: error.stack,
+                error: error.message
             });
-            if (error.code === 'ER_DUP_ENTRY') {
-                return { success: 0, status: 409, msg: 'A user with this Login ID or Email already exists.' };
-            }
             return { success: 0, status: 500, msg: error.message || 'Failed to create account.' };
         }
     },

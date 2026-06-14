@@ -44,7 +44,7 @@ export default function ProductForm() {
       setLoading(true);
       ProductService.getById(id).then((res) => {
         if (res.success) {
-          const p = res.data.data;
+          const p = res.data;
           setForm({ ...form, ...p });
         }
         setLoading(false);
@@ -152,3 +152,4 @@ export default function ProductForm() {
     </div>
   );
 }
+

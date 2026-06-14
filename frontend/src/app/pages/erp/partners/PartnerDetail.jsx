@@ -20,7 +20,7 @@ export default function PartnerDetail() {
   const load = async () => {
     setLoading(true);
     const res = await PartnerService.getById(id);
-    if (res.success) setPartner(res.data.data);
+    if (res.success) setPartner(res.data);
     else toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     setLoading(false);
   };
@@ -109,3 +109,4 @@ export default function PartnerDetail() {
     </div>
   );
 }
+

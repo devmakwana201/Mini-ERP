@@ -42,11 +42,11 @@ export default function PoForm() {
 
   useEffect(() => {
     Promise.all([
-      PartnerService.getAll({ limit: 1000, is_vendor: true }).then(r => {
-        if (r.success) setVendors(r.data.data || []);
+      PartnerService.getAll({ limit: 1000, is_vendor: true }).then((r) => {
+        if (r.success) setVendors(r.data || []);
       }),
-      ProductService.getAll({ limit: 1000 }).then(r => {
-        if (r.success) setProducts(r.data.data || []);
+      ProductService.getAll({ limit: 1000 }).then((r) => {
+        if (r.success) setProducts(r.data || []);
       }),
     ]);
 
@@ -54,13 +54,15 @@ export default function PoForm() {
       setLoading(true);
       PurchaseOrderService.getById(id).then((res) => {
         if (res.success) {
-          const po = res.data.data;
+          const po = res.data;
           setForm({
             vendor_id: po.vendor_id,
-            expected_delivery: po.expected_delivery ? new Date(po.expected_delivery) : null,
+            expected_delivery: po.expected_delivery
+              ? new Date(po.expected_delivery)
+              : null,
             payment_terms: po.payment_terms || "",
             notes: po.notes || "",
-            lines: (po.lines || []).map(l => ({
+            lines: (po.lines || []).map((l) => ({
               pol_id: l.pol_id,
               product_id: l.product_id,
               qty_required: l.qty_required,
@@ -74,41 +76,64 @@ export default function PoForm() {
   }, [id, isEdit]);
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
-  const setLine = (field, value) => setNewLine((l) => ({ ...l, [field]: value }));
+  const setLine = (field, value) =>
+    setNewLine((l) => ({ ...l, [field]: value }));
 
   const addLine = () => {
-    if (!newLine.product_id || !newLine.qty_required || newLine.unit_cost === null) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Fill all line fields" });
+    if (
+      !newLine.product_id ||
+      !newLine.qty_required ||
+      newLine.unit_cost === null
+    ) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Fill all line fields",
+      });
       return;
     }
-    const product = products.find(p => p.product_id === newLine.product_id);
-    setForm(f => ({
+    const product = products.find((p) => p.product_id === newLine.product_id);
+    setForm((f) => ({
       ...f,
-      lines: [...f.lines, {
-        ...newLine,
-        product_name: product?.product_name || "",
-        product_code: product?.product_code || "",
-      }],
+      lines: [
+        ...f.lines,
+        {
+          ...newLine,
+          product_name: product?.product_name || "",
+          product_code: product?.product_code || "",
+        },
+      ],
     }));
     setNewLine({ product_id: null, qty_required: null, unit_cost: null });
   };
 
   const removeLine = (idx) => {
-    setForm(f => ({ ...f, lines: f.lines.filter((_, i) => i !== idx) }));
+    setForm((f) => ({ ...f, lines: f.lines.filter((_, i) => i !== idx) }));
   };
 
   const calculateTotal = () => {
-    return form.lines.reduce((sum, l) => sum + ((l.qty_required || 0) * (l.unit_cost || 0)), 0);
+    return form.lines.reduce(
+      (sum, l) => sum + (l.qty_required || 0) * (l.unit_cost || 0),
+      0,
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.vendor_id) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Select a vendor" });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Select a vendor",
+      });
       return;
     }
     if (form.lines.length === 0) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Add at least one line item" });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Add at least one line item",
+      });
       return;
     }
 
@@ -116,8 +141,10 @@ export default function PoForm() {
     const payload = {
       ...form,
       total_amount: calculateTotal(),
-      expected_delivery: form.expected_delivery ? form.expected_delivery.toISOString().split("T")[0] : null,
-      lines: form.lines.map(l => ({
+      expected_delivery: form.expected_delivery
+        ? form.expected_delivery.toISOString().split("T")[0]
+        : null,
+      lines: form.lines.map((l) => ({
         product_id: l.product_id,
         qty_required: l.qty_required,
         unit_cost: l.unit_cost,
@@ -129,21 +156,38 @@ export default function PoForm() {
       : await PurchaseOrderService.create(payload);
 
     if (res.success) {
-      toast.current?.show({ severity: "success", summary: "Saved", detail: "Purchase order saved" });
+      toast.current?.show({
+        severity: "success",
+        summary: "Saved",
+        detail: "Purchase order saved",
+      });
       setTimeout(() => navigate("/purchase-orders"), 1000);
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setSaving(false);
   };
 
-  if (loading) return <div className="flex justify-center p-8"><ProgressSpinner /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-8">
+        <ProgressSpinner />
+      </div>
+    );
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-4">
       <Toast ref={toast} />
       <div className="mb-4 flex items-center gap-3">
-        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/purchase-orders")} />
+        <Button
+          icon="pi pi-arrow-left"
+          text
+          onClick={() => navigate("/purchase-orders")}
+        />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Purchase Order" : "New Purchase Order"}
         </h1>
@@ -153,88 +197,169 @@ export default function PoForm() {
         <Card title="Order Info" className="mb-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Vendor</label>
-              <Dropdown value={form.vendor_id} options={vendors}
-                optionLabel="name" optionValue="partner_id"
+              <label className="mb-2 block text-sm font-medium">Vendor</label>
+              <Dropdown
+                value={form.vendor_id}
+                options={vendors}
+                optionLabel="name"
+                optionValue="partner_id"
                 onChange={(e) => set("vendor_id", e.value)}
-                placeholder="Select vendor" filter />
+                placeholder="Select vendor"
+                filter
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Expected Delivery</label>
-              <Calendar value={form.expected_delivery}
+              <label className="mb-2 block text-sm font-medium">
+                Expected Delivery
+              </label>
+              <Calendar
+                value={form.expected_delivery}
                 onChange={(e) => set("expected_delivery", e.value)}
-                showIcon dateFormat="dd/mm/yy" />
+                showIcon
+                dateFormat="dd/mm/yy"
+              />
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Payment Terms</label>
-            <InputText value={form.payment_terms} onChange={(e) => set("payment_terms", e.target.value)}
-              placeholder="e.g., Net 30, COD" />
+            <label className="mb-2 block text-sm font-medium">
+              Payment Terms
+            </label>
+            <InputText
+              value={form.payment_terms}
+              onChange={(e) => set("payment_terms", e.target.value)}
+              placeholder="e.g., Net 30, COD"
+            />
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Notes</label>
-            <InputTextarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
-              rows={3} placeholder="Special instructions..." />
+            <label className="mb-2 block text-sm font-medium">Notes</label>
+            <InputTextarea
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              rows={3}
+              placeholder="Special instructions..."
+            />
           </div>
         </Card>
 
         <Card title="Line Items" className="mb-4">
-          <div className="grid grid-cols-4 gap-3 mb-4 items-end">
+          <div className="mb-4 grid grid-cols-4 items-end gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1">Product</label>
-              <Dropdown value={newLine.product_id} options={products}
-                optionLabel="product_name" optionValue="product_id"
+              <label className="mb-1 block text-xs font-medium">Product</label>
+              <Dropdown
+                value={newLine.product_id}
+                options={products}
+                optionLabel="product_name"
+                optionValue="product_id"
                 onChange={(e) => setLine("product_id", e.value)}
-                placeholder="Select product" filter />
+                placeholder="Select product"
+                filter
+              />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1">Qty</label>
-              <InputNumber value={newLine.qty_required}
+              <label className="mb-1 block text-xs font-medium">Qty</label>
+              <InputNumber
+                value={newLine.qty_required}
                 onChange={(e) => setLine("qty_required", e.value)}
-                placeholder="Quantity" useGrouping={false} />
+                placeholder="Quantity"
+                useGrouping={false}
+              />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1">Unit Cost</label>
-              <InputNumber value={newLine.unit_cost}
+              <label className="mb-1 block text-xs font-medium">
+                Unit Cost
+              </label>
+              <InputNumber
+                value={newLine.unit_cost}
                 onChange={(e) => setLine("unit_cost", e.value)}
-                prefix="₹" placeholder="Cost" mode="currency" currency="INR" />
+                prefix="₹"
+                placeholder="Cost"
+                mode="currency"
+                currency="INR"
+              />
             </div>
-            <Button label="Add" icon="pi pi-plus" size="small" onClick={addLine} />
+            <Button
+              label="Add"
+              icon="pi pi-plus"
+              size="small"
+              onClick={addLine}
+            />
           </div>
 
           {form.lines.length > 0 && (
             <div className="mb-4">
               <DataTable value={form.lines} className="text-xs">
-                <Column field="product_code" header="Code" style={{ width: "80px" }} />
+                <Column
+                  field="product_code"
+                  header="Code"
+                  style={{ width: "80px" }}
+                />
                 <Column field="product_name" header="Product" />
-                <Column field="qty_required" header="Qty" style={{ width: "60px" }} />
-                <Column field="unit_cost" header="Cost" style={{ width: "80px" }} />
-                <Column header="Total" style={{ width: "100px" }} body={(row) => (
-                  <span>₹{((row.qty_required || 0) * (row.unit_cost || 0)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                )} />
-                <Column header="" body={(row, { rowIndex }) => (
-                  <Button icon="pi pi-trash" size="small" text severity="danger"
-                    onClick={() => removeLine(rowIndex)} />
-                )} style={{ width: "60px" }} />
+                <Column
+                  field="qty_required"
+                  header="Qty"
+                  style={{ width: "60px" }}
+                />
+                <Column
+                  field="unit_cost"
+                  header="Cost"
+                  style={{ width: "80px" }}
+                />
+                <Column
+                  header="Total"
+                  style={{ width: "100px" }}
+                  body={(row) => (
+                    <span>
+                      ₹
+                      {(
+                        (row.qty_required || 0) * (row.unit_cost || 0)
+                      ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  )}
+                />
+                <Column
+                  header=""
+                  body={(row, { rowIndex }) => (
+                    <Button
+                      icon="pi pi-trash"
+                      size="small"
+                      text
+                      severity="danger"
+                      onClick={() => removeLine(rowIndex)}
+                    />
+                  )}
+                  style={{ width: "60px" }}
+                />
               </DataTable>
 
               <div className="mt-3 text-right">
                 <span className="text-lg font-bold">
-                  Total: ₹{calculateTotal().toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  Total: ₹
+                  {calculateTotal().toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                  })}
                 </span>
               </div>
             </div>
           )}
         </Card>
 
-        <div className="flex gap-2 justify-end">
-          <Button label="Cancel" severity="secondary" onClick={() => navigate("/purchase-orders")} />
-          <Button label={isEdit ? "Update" : "Create"} icon="pi pi-check"
-            loading={saving} onClick={handleSubmit} />
+        <div className="flex justify-end gap-2">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            onClick={() => navigate("/purchase-orders")}
+          />
+          <Button
+            label={isEdit ? "Update" : "Create"}
+            icon="pi pi-check"
+            loading={saving}
+            onClick={handleSubmit}
+          />
         </div>
       </form>
     </div>
   );
 }
+

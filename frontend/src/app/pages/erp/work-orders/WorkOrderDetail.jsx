@@ -30,74 +30,127 @@ export default function WorkOrderDetail() {
     setLoading(true);
     const res = await WorkOrderService.getById(id);
     if (res.success) {
-      setWo(res.data.data);
-      setNotes(res.data.data.notes || "");
+      setWo(res.data);
+      setNotes(res.data.notes || "");
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setLoading(false);
   };
 
   const handleStatusChange = async () => {
     if (!newStatus) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Select a status" });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Select a status",
+      });
       return;
     }
 
     setUpdating(true);
-    const res = await WorkOrderService.updateStatus(id, { status: newStatus, notes });
+    const res = await WorkOrderService.updateStatus(id, {
+      status: newStatus,
+      notes,
+    });
     if (res.success) {
-      toast.current?.show({ severity: "success", summary: "Updated", detail: "Work order status updated" });
+      toast.current?.show({
+        severity: "success",
+        summary: "Updated",
+        detail: "Work order status updated",
+      });
       setStatusDialog(false);
       fetchDetail();
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setUpdating(false);
   };
 
-  if (loading) return <div className="flex justify-center p-8"><ProgressSpinner /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-8">
+        <ProgressSpinner />
+      </div>
+    );
   if (!wo) return <div className="p-4 text-center">Work order not found</div>;
 
-  const statusSeverity = { pending: "info", in_progress: "warning", completed: "success", hold: "danger" };
+  const statusSeverity = {
+    pending: "info",
+    in_progress: "warning",
+    completed: "success",
+    hold: "danger",
+  };
   const prioritySeverity = { high: "danger", medium: "warning", low: "info" };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-4">
       <Toast ref={toast} />
 
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/work-orders")} />
+          <Button
+            icon="pi pi-arrow-left"
+            text
+            onClick={() => navigate("/work-orders")}
+          />
           <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">{wo.wo_number}</h1>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+              {wo.wo_number}
+            </h1>
             <p className="text-sm text-gray-500">From MO: {wo.mo_number}</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Tag value={wo.status} severity={statusSeverity[wo.status] || "secondary"} />
-          {wo.priority && <Tag value={wo.priority} severity={prioritySeverity[wo.priority] || "secondary"} />}
+          <Tag
+            value={wo.status}
+            severity={statusSeverity[wo.status] || "secondary"}
+          />
+          {wo.priority && (
+            <Tag
+              value={wo.priority}
+              severity={prioritySeverity[wo.priority] || "secondary"}
+            />
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-2 gap-4">
         <Card title="Work Details">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-gray-500 uppercase mb-1">Operation</label>
+              <label className="mb-1 block text-xs text-gray-500 uppercase">
+                Operation
+              </label>
               <p className="text-lg font-medium">{wo.operation_name}</p>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 uppercase mb-1">Equipment / Work Center</label>
-              <p className="text-lg">{wo.equipment_name || wo.work_center_name || "-"}</p>
+              <label className="mb-1 block text-xs text-gray-500 uppercase">
+                Equipment / Work Center
+              </label>
+              <p className="text-lg">
+                {wo.equipment_name || wo.work_center_name || "-"}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-500 uppercase mb-1">Sequence</label>
+                <label className="mb-1 block text-xs text-gray-500 uppercase">
+                  Sequence
+                </label>
                 <p className="text-lg font-bold">{wo.sequence}</p>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase mb-1">Standard Time</label>
+                <label className="mb-1 block text-xs text-gray-500 uppercase">
+                  Standard Time
+                </label>
                 <p className="text-lg">{wo.standard_minutes} min</p>
               </div>
             </div>
@@ -107,21 +160,37 @@ export default function WorkOrderDetail() {
         <Card title="Product & Schedule">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-gray-500 uppercase mb-1">Product</label>
+              <label className="mb-1 block text-xs text-gray-500 uppercase">
+                Product
+              </label>
               <p className="text-lg font-medium">{wo.product_name}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-500 uppercase mb-1">Start Date</label>
-                <p className="text-sm">{wo.start_date ? new Date(wo.start_date).toLocaleDateString() : "-"}</p>
+                <label className="mb-1 block text-xs text-gray-500 uppercase">
+                  Start Date
+                </label>
+                <p className="text-sm">
+                  {wo.start_date
+                    ? new Date(wo.start_date).toLocaleDateString()
+                    : "-"}
+                </p>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase mb-1">Target Date</label>
-                <p className="text-sm">{wo.target_date ? new Date(wo.target_date).toLocaleDateString() : "-"}</p>
+                <label className="mb-1 block text-xs text-gray-500 uppercase">
+                  Target Date
+                </label>
+                <p className="text-sm">
+                  {wo.target_date
+                    ? new Date(wo.target_date).toLocaleDateString()
+                    : "-"}
+                </p>
               </div>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 uppercase mb-1">Qty to Produce</label>
+              <label className="mb-1 block text-xs text-gray-500 uppercase">
+                Qty to Produce
+              </label>
               <p className="text-lg font-bold">{wo.qty_planned}</p>
             </div>
           </div>
@@ -136,62 +205,108 @@ export default function WorkOrderDetail() {
 
       {wo.created_at && (
         <Card className="mb-4">
-          <div className="text-xs text-gray-500 space-y-1">
+          <div className="space-y-1 text-xs text-gray-500">
             <p>Created: {new Date(wo.created_at).toLocaleString()}</p>
-            {wo.updated_at && <p>Updated: {new Date(wo.updated_at).toLocaleString()}</p>}
+            {wo.updated_at && (
+              <p>Updated: {new Date(wo.updated_at).toLocaleString()}</p>
+            )}
             {wo.created_by_name && <p>By: {wo.created_by_name}</p>}
           </div>
         </Card>
       )}
 
-      <div className="flex flex-wrap gap-2 justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         {wo.status !== "completed" && (
-          <Button label={`Update Status${wo.status === "in_progress" ? " → Complete" : ""}`}
-            icon="pi pi-pencil" onClick={() => {
-              setNewStatus(wo.status === "in_progress" ? "completed" : "in_progress");
+          <Button
+            label={`Update Status${wo.status === "in_progress" ? " → Complete" : ""}`}
+            icon="pi pi-pencil"
+            onClick={() => {
+              setNewStatus(
+                wo.status === "in_progress" ? "completed" : "in_progress",
+              );
               setStatusDialog(true);
-            }} />
+            }}
+          />
         )}
         {wo.status === "pending" && (
-          <Button label="Start Work" icon="pi pi-play" className="p-button-info"
+          <Button
+            label="Start Work"
+            icon="pi pi-play"
+            className="p-button-info"
             onClick={() => {
               setNewStatus("in_progress");
               setStatusDialog(true);
-            }} />
+            }}
+          />
         )}
-        <Button label="Back" icon="pi pi-arrow-left" text
-          onClick={() => navigate("/work-orders")} />
+        <Button
+          label="Back"
+          icon="pi pi-arrow-left"
+          text
+          onClick={() => navigate("/work-orders")}
+        />
       </div>
 
-      <Dialog header="Update Work Order Status" visible={statusDialog} onHide={() => setStatusDialog(false)} modal>
+      <Dialog
+        header="Update Work Order Status"
+        visible={statusDialog}
+        onHide={() => setStatusDialog(false)}
+        modal
+      >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-2">New Status</label>
+            <label className="mb-2 block text-sm font-medium">New Status</label>
             <div className="space-y-2">
-              {["pending", "in_progress", "completed", "hold"].map(s => (
+              {["pending", "in_progress", "completed", "hold"].map((s) => (
                 <div key={s} className="flex items-center">
-                  <input type="radio" id={`status-${s}`} name="status" value={s}
-                    checked={newStatus === s} onChange={(e) => setNewStatus(e.target.value)}
-                    className="mr-2" />
-                  <label htmlFor={`status-${s}`} className="capitalize cursor-pointer">{s.replace("_", " ")}</label>
+                  <input
+                    type="radio"
+                    id={`status-${s}`}
+                    name="status"
+                    value={s}
+                    checked={newStatus === s}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="mr-2"
+                  />
+                  <label
+                    htmlFor={`status-${s}`}
+                    className="cursor-pointer capitalize"
+                  >
+                    {s.replace("_", " ")}
+                  </label>
                 </div>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Notes (optional)</label>
-            <InputTextarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              rows={3} placeholder="Add any notes about this status change..." />
+            <label className="mb-2 block text-sm font-medium">
+              Notes (optional)
+            </label>
+            <InputTextarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Add any notes about this status change..."
+            />
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2 justify-end">
-          <Button label="Cancel" severity="secondary" onClick={() => setStatusDialog(false)} />
-          <Button label="Update" icon="pi pi-check" loading={updating}
-            onClick={handleStatusChange} />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            onClick={() => setStatusDialog(false)}
+          />
+          <Button
+            label="Update"
+            icon="pi pi-check"
+            loading={updating}
+            onClick={handleStatusChange}
+          />
         </div>
       </Dialog>
     </div>
   );
 }
+

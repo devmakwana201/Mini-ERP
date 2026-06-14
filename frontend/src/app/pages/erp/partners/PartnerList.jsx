@@ -34,8 +34,8 @@ export default function PartnerList() {
 
     const res = await PartnerService.getAll(params);
     if (res.success) {
-      setPartners(res.data.data || []);
-      setTotal(res.data.pagination?.total || 0);
+      setPartners(res.data || []);
+      setTotal(res.pagination?.total || 0);
     } else {
       toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     }
@@ -103,3 +103,4 @@ export default function PartnerList() {
     </div>
   );
 }
+

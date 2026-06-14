@@ -33,10 +33,14 @@ export default function MoDetail() {
     setLoading(true);
     const res = await ManufacturingOrderService.getById(id);
     if (res.success) {
-      setMo(res.data.data);
-      setQtyCompleted(res.data.data.qty_completed || 0);
+      setMo(res.data);
+      setQtyCompleted(res.data.qty_completed || 0);
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setLoading(false);
   };
@@ -45,28 +49,50 @@ export default function MoDetail() {
     setConfirming(true);
     const res = await ManufacturingOrderService.confirm(id);
     if (res.success) {
-      toast.current?.show({ severity: "success", summary: "Confirmed", detail: "Manufacturing order confirmed. BOM will be exploded." });
+      toast.current?.show({
+        severity: "success",
+        summary: "Confirmed",
+        detail: "Manufacturing order confirmed. BOM will be exploded.",
+      });
       fetchDetail();
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setConfirming(false);
   };
 
   const handleReportCompletion = async () => {
     if (qtyCompleted <= 0 || qtyCompleted > (mo.qty_planned || 0)) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Enter valid completion quantity" });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Enter valid completion quantity",
+      });
       return;
     }
 
     setReporting(true);
-    const res = await ManufacturingOrderService.reportCompletion(id, { qty_completed: qtyCompleted });
+    const res = await ManufacturingOrderService.reportCompletion(id, {
+      qty_completed: qtyCompleted,
+    });
     if (res.success) {
-      toast.current?.show({ severity: "success", summary: "Reported", detail: "Production completion reported" });
+      toast.current?.show({
+        severity: "success",
+        summary: "Reported",
+        detail: "Production completion reported",
+      });
       setReportDialog(false);
       fetchDetail();
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setReporting(false);
   };
@@ -76,66 +102,123 @@ export default function MoDetail() {
       setCancelling(true);
       const res = await ManufacturingOrderService.cancel(id);
       if (res.success) {
-        toast.current?.show({ severity: "success", summary: "Cancelled", detail: "Manufacturing order cancelled" });
+        toast.current?.show({
+          severity: "success",
+          summary: "Cancelled",
+          detail: "Manufacturing order cancelled",
+        });
         setTimeout(() => navigate("/manufacturing-orders"), 1000);
       } else {
-        toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: res.message,
+        });
       }
       setCancelling(false);
     }
   };
 
-  if (loading) return <div className="flex justify-center p-8"><ProgressSpinner /></div>;
-  if (!mo) return <div className="p-4 text-center">Manufacturing order not found</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-8">
+        <ProgressSpinner />
+      </div>
+    );
+  if (!mo)
+    return <div className="p-4 text-center">Manufacturing order not found</div>;
 
-  const statusSeverity = { draft: "info", confirmed: "warning", in_progress: "primary", done: "success", cancelled: "danger" };
-  const progress = mo.qty_planned ? Math.round((mo.qty_completed / mo.qty_planned) * 100) : 0;
+  const statusSeverity = {
+    draft: "info",
+    confirmed: "warning",
+    in_progress: "primary",
+    done: "success",
+    cancelled: "danger",
+  };
+  const progress = mo.qty_planned
+    ? Math.round((mo.qty_completed / mo.qty_planned) * 100)
+    : 0;
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-4">
       <Toast ref={toast} />
 
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/manufacturing-orders")} />
+          <Button
+            icon="pi pi-arrow-left"
+            text
+            onClick={() => navigate("/manufacturing-orders")}
+          />
           <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">{mo.mo_number}</h1>
-            <p className="text-sm text-gray-500">Created {new Date(mo.created_at).toLocaleDateString()}</p>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+              {mo.mo_number}
+            </h1>
+            <p className="text-sm text-gray-500">
+              Created {new Date(mo.created_at).toLocaleDateString()}
+            </p>
           </div>
         </div>
-        <Tag value={mo.status} severity={statusSeverity[mo.status] || "secondary"} />
+        <Tag
+          value={mo.status}
+          severity={statusSeverity[mo.status] || "secondary"}
+        />
       </div>
 
       <Card className="mb-4">
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="mb-4 grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 uppercase">Product</label>
+            <label className="block text-xs text-gray-500 uppercase">
+              Product
+            </label>
             <p className="text-lg font-medium">{mo.product_name}</p>
             <p className="text-xs text-gray-500">{mo.product_code}</p>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 uppercase">Est. Cost</label>
-            <p className="text-lg font-bold">₹{(mo.estimated_cost || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+            <label className="block text-xs text-gray-500 uppercase">
+              Est. Cost
+            </label>
+            <p className="text-lg font-bold">
+              ₹
+              {(mo.estimated_cost || 0).toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 uppercase">Target Date</label>
-            <p className="text-lg">{mo.target_date ? new Date(mo.target_date).toLocaleDateString() : "-"}</p>
+            <label className="block text-xs text-gray-500 uppercase">
+              Target Date
+            </label>
+            <p className="text-lg">
+              {mo.target_date
+                ? new Date(mo.target_date).toLocaleDateString()
+                : "-"}
+            </p>
           </div>
         </div>
 
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium">Production Progress</label>
-            <span className="text-sm font-bold">{mo.qty_completed || 0} / {mo.qty_planned} ({progress}%)</span>
+        <div className="mb-4 rounded bg-blue-50 p-3 dark:bg-blue-900/20">
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-sm font-medium">
+              Production Progress
+            </label>
+            <span className="text-sm font-bold">
+              {mo.qty_completed || 0} / {mo.qty_planned} ({progress}%)
+            </span>
           </div>
-          <div className="w-full bg-gray-300 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+          <div className="h-2 w-full rounded-full bg-gray-300">
+            <div
+              className="h-2 rounded-full bg-blue-600"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
         </div>
 
         {mo.notes && (
-          <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-900 rounded">
-            <label className="block text-xs text-gray-500 uppercase mb-1">Notes</label>
+          <div className="mb-4 rounded bg-gray-100 p-3 dark:bg-gray-900">
+            <label className="mb-1 block text-xs text-gray-500 uppercase">
+              Notes
+            </label>
             <p className="text-sm">{mo.notes}</p>
           </div>
         )}
@@ -144,61 +227,142 @@ export default function MoDetail() {
       {mo.mo_components && mo.mo_components.length > 0 && (
         <Card title="BOM Components" className="mb-4">
           <DataTable value={mo.mo_components} className="text-sm">
-            <Column field="component_code" header="Code" style={{ width: "80px" }} />
+            <Column
+              field="component_code"
+              header="Code"
+              style={{ width: "80px" }}
+            />
             <Column field="component_name" header="Component" />
-            <Column field="qty_per_unit" header="Per Unit" style={{ width: "80px" }} />
-            <Column field="qty_required" header="Required" style={{ width: "80px" }} />
-            <Column field="qty_consumed" header="Consumed" style={{ width: "80px" }} />
-            <Column header="Status" body={(row) => {
-              const consumed = row.qty_consumed || 0;
-              const required = row.qty_required || 0;
-              if (consumed >= required) return <Tag value="Complete" severity="success" className="text-xs" />;
-              if (consumed > 0) return <Tag value="Partial" severity="warning" className="text-xs" />;
-              return <Tag value="Pending" severity="info" className="text-xs" />;
-            }} />
+            <Column
+              field="qty_per_unit"
+              header="Per Unit"
+              style={{ width: "80px" }}
+            />
+            <Column
+              field="qty_required"
+              header="Required"
+              style={{ width: "80px" }}
+            />
+            <Column
+              field="qty_consumed"
+              header="Consumed"
+              style={{ width: "80px" }}
+            />
+            <Column
+              header="Status"
+              body={(row) => {
+                const consumed = row.qty_consumed || 0;
+                const required = row.qty_required || 0;
+                if (consumed >= required)
+                  return (
+                    <Tag
+                      value="Complete"
+                      severity="success"
+                      className="text-xs"
+                    />
+                  );
+                if (consumed > 0)
+                  return (
+                    <Tag
+                      value="Partial"
+                      severity="warning"
+                      className="text-xs"
+                    />
+                  );
+                return (
+                  <Tag value="Pending" severity="info" className="text-xs" />
+                );
+              }}
+            />
           </DataTable>
         </Card>
       )}
 
-      <div className="flex flex-wrap gap-2 justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         {mo.status === "draft" && (
           <>
-            <Button label="Confirm" icon="pi pi-check" loading={confirming}
-              onClick={handleConfirm} className="p-button-success" />
-            <Button label="Edit" icon="pi pi-pencil" text
-              onClick={() => navigate(`/manufacturing-orders/${id}/edit`)} />
+            <Button
+              label="Confirm"
+              icon="pi pi-check"
+              loading={confirming}
+              onClick={handleConfirm}
+              className="p-button-success"
+            />
+            <Button
+              label="Edit"
+              icon="pi pi-pencil"
+              text
+              onClick={() => navigate(`/manufacturing-orders/${id}/edit`)}
+            />
           </>
         )}
         {(mo.status === "confirmed" || mo.status === "in_progress") && (
-          <Button label="Report Completion" icon="pi pi-check-circle" loading={reporting}
-            onClick={() => setReportDialog(true)} className="p-button-info" />
+          <Button
+            label="Report Completion"
+            icon="pi pi-check-circle"
+            loading={reporting}
+            onClick={() => setReportDialog(true)}
+            className="p-button-info"
+          />
         )}
         {(mo.status === "draft" || mo.status === "confirmed") && (
-          <Button label="Cancel" icon="pi pi-times" severity="danger" loading={cancelling}
-            onClick={handleCancel} />
+          <Button
+            label="Cancel"
+            icon="pi pi-times"
+            severity="danger"
+            loading={cancelling}
+            onClick={handleCancel}
+          />
         )}
         {mo.status === "done" && (
-          <Button label="View Audit" icon="pi pi-list" text severity="secondary" />
+          <Button
+            label="View Audit"
+            icon="pi pi-list"
+            text
+            severity="secondary"
+          />
         )}
       </div>
 
-      <Dialog header="Report Production Completion" visible={reportDialog} onHide={() => setReportDialog(false)} modal>
+      <Dialog
+        header="Report Production Completion"
+        visible={reportDialog}
+        onHide={() => setReportDialog(false)}
+        modal
+      >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-2">Quantity Completed</label>
-            <InputNumber value={qtyCompleted} onChange={(e) => setQtyCompleted(e.value)}
-              min={0} max={mo.qty_planned}
-              placeholder="Enter completed quantity" />
-            <p className="text-xs text-gray-500 mt-1">Planned: {mo.qty_planned} | Current: {mo.qty_completed || 0}</p>
+            <label className="mb-2 block text-sm font-medium">
+              Quantity Completed
+            </label>
+            <InputNumber
+              value={qtyCompleted}
+              onChange={(e) => setQtyCompleted(e.value)}
+              min={0}
+              max={mo.qty_planned}
+              placeholder="Enter completed quantity"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Planned: {mo.qty_planned} | Current: {mo.qty_completed || 0}
+            </p>
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2 justify-end">
-          <Button label="Cancel" severity="secondary" onClick={() => setReportDialog(false)} />
-          <Button label="Report" icon="pi pi-check" loading={reporting}
-            onClick={handleReportCompletion} />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            onClick={() => setReportDialog(false)}
+          />
+          <Button
+            label="Report"
+            icon="pi pi-check"
+            loading={reporting}
+            onClick={handleReportCompletion}
+          />
         </div>
       </Dialog>
     </div>
   );
 }
+

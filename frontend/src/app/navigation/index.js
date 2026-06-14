@@ -5,6 +5,7 @@ import { incomingGoods } from "./incomingGoods";
 import { approvals } from "./approvals";
 import { agroDot } from "./agroDot";
 import { salesPanel } from "./salesFinance";
+import { erp } from "./erp";
 
 const hasFeatureFlag = (userOrFlags, key) => {
   const flags =
@@ -21,7 +22,7 @@ const hasFeatureFlag = (userOrFlags, key) => {
 
 // Role-based navigation + optional feature flags
 export const getNavigation = (roleid, userOrFlags) => {
-  const nav = [dashboards, masterRecords, procurement, agroDot];
+  const nav = [dashboards, erp, masterRecords, procurement, agroDot];
 
   if (hasFeatureFlag(userOrFlags, "incomingGoods.view")) {
     nav.push(incomingGoods);

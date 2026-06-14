@@ -18,7 +18,7 @@ export const procurement = {
     {
       id: "procurement.purchase-order",
       type: NAV_TYPE_ITEM,
-      path: path(ROOT_PROCUREMENT, "/purchase-order"),
+      path: "/purchase-orders",
       title: "Purchase Order",
       transKey: "nav.procurement.purchase-order",
       Icon: PurchaseOrderIcon,
@@ -26,7 +26,7 @@ export const procurement = {
     {
       id: "procurement.create-po",
       type: NAV_TYPE_ITEM,
-      path: path(ROOT_PROCUREMENT, "/create-po"),
+      path: "/purchase-orders/new",
       title: "Create PO",
       transKey: "nav.procurement.create-po",
       Icon: CreatePoIcon,

@@ -13,7 +13,7 @@ import { Column } from "primereact/column";
 import { InputTextarea } from "primereact/inputtextarea";
 import { ManufacturingOrderService } from "services/transactions/transactions.service";
 import { ProductService } from "services/products/product.service";
-import { BomService } from "services/master-records/bom.service";
+import { BomService } from "services/masters/bom.service";
 
 export default function MoForm() {
   const navigate = useNavigate();
@@ -36,11 +36,11 @@ export default function MoForm() {
 
   useEffect(() => {
     Promise.all([
-      ProductService.getAll({ limit: 1000 }).then(r => {
-        if (r.success) setProducts(r.data.data || []);
+      ProductService.getAll({ limit: 1000 }).then((r) => {
+        if (r.success) setProducts(r.data || []);
       }),
-      BomService.getAll({ limit: 1000 }).then(r => {
-        if (r.success) setBoms(r.data.data || []);
+      BomService.getAll({ limit: 1000 }).then((r) => {
+        if (r.success) setBoms(r.data || []);
       }),
     ]);
 
@@ -48,7 +48,7 @@ export default function MoForm() {
       setLoading(true);
       ManufacturingOrderService.getById(id).then((res) => {
         if (res.success) {
-          const mo = res.data.data;
+          const mo = res.data;
           setForm({
             product_id: mo.product_id,
             qty_planned: mo.qty_planned,
@@ -67,15 +67,15 @@ export default function MoForm() {
   const handleProductChange = async (productId) => {
     set("product_id", productId);
 
-    const product = products.find(p => p.product_id === productId);
+    const product = products.find((p) => p.product_id === productId);
     if (product && product.bom_id) {
       const bomRes = await BomService.getById(product.bom_id);
       if (bomRes.success) {
-        const bomItems = (bomRes.data.data.bom_items || []).map(item => ({
+        const bomItems = (bomres.data.bom_items || []).map((item) => ({
           ...item,
           qty_required: (item.qty_per_unit || 1) * (form.qty_planned || 1),
         }));
-        setForm(f => ({ ...f, mo_components: bomItems }));
+        setForm((f) => ({ ...f, mo_components: bomItems }));
       }
     }
   };
@@ -83,17 +83,27 @@ export default function MoForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.product_id || !form.qty_planned) {
-      toast.current?.show({ severity: "warn", summary: "Validation", detail: "Select product and quantity" });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail: "Select product and quantity",
+      });
       return;
     }
     if (form.mo_components.length === 0) {
-      toast.current?.show({ severity: "warn", summary: "Note", detail: "No BOM components. MO will be created with empty components." });
+      toast.current?.show({
+        severity: "warn",
+        summary: "Note",
+        detail: "No BOM components. MO will be created with empty components.",
+      });
     }
 
     setSaving(true);
     const payload = {
       ...form,
-      target_date: form.target_date ? form.target_date.toISOString().split("T")[0] : null,
+      target_date: form.target_date
+        ? form.target_date.toISOString().split("T")[0]
+        : null,
     };
 
     const res = isEdit
@@ -101,21 +111,38 @@ export default function MoForm() {
       : await ManufacturingOrderService.create(payload);
 
     if (res.success) {
-      toast.current?.show({ severity: "success", summary: "Saved", detail: "Manufacturing order saved" });
+      toast.current?.show({
+        severity: "success",
+        summary: "Saved",
+        detail: "Manufacturing order saved",
+      });
       setTimeout(() => navigate("/manufacturing-orders"), 1000);
     } else {
-      toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
     }
     setSaving(false);
   };
 
-  if (loading) return <div className="flex justify-center p-8"><ProgressSpinner /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center p-8">
+        <ProgressSpinner />
+      </div>
+    );
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl p-4">
       <Toast ref={toast} />
       <div className="mb-4 flex items-center gap-3">
-        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/manufacturing-orders")} />
+        <Button
+          icon="pi pi-arrow-left"
+          text
+          onClick={() => navigate("/manufacturing-orders")}
+        />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Manufacturing Order" : "New Manufacturing Order"}
         </h1>
@@ -125,54 +152,95 @@ export default function MoForm() {
         <Card title="Order Info" className="mb-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Product</label>
-              <Dropdown value={form.product_id} options={products}
-                optionLabel="product_name" optionValue="product_id"
+              <label className="mb-2 block text-sm font-medium">Product</label>
+              <Dropdown
+                value={form.product_id}
+                options={products}
+                optionLabel="product_name"
+                optionValue="product_id"
                 onChange={(e) => handleProductChange(e.value)}
-                placeholder="Select product" filter />
+                placeholder="Select product"
+                filter
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Qty to Produce</label>
-              <InputNumber value={form.qty_planned}
+              <label className="mb-2 block text-sm font-medium">
+                Qty to Produce
+              </label>
+              <InputNumber
+                value={form.qty_planned}
                 onChange={(e) => set("qty_planned", e.value)}
-                placeholder="Quantity" useGrouping={false} />
+                placeholder="Quantity"
+                useGrouping={false}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Target Date</label>
-              <Calendar value={form.target_date}
+              <label className="mb-2 block text-sm font-medium">
+                Target Date
+              </label>
+              <Calendar
+                value={form.target_date}
                 onChange={(e) => set("target_date", e.value)}
-                showIcon dateFormat="dd/mm/yy" />
+                showIcon
+                dateFormat="dd/mm/yy"
+              />
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Notes</label>
-            <InputTextarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
-              rows={3} placeholder="Special instructions..." />
+            <label className="mb-2 block text-sm font-medium">Notes</label>
+            <InputTextarea
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              rows={3}
+              placeholder="Special instructions..."
+            />
           </div>
         </Card>
 
         {form.mo_components.length > 0 && (
           <Card title="BOM Components (Auto-calculated)" className="mb-4">
             <DataTable value={form.mo_components} className="text-xs">
-              <Column field="component_code" header="Code" style={{ width: "80px" }} />
+              <Column
+                field="component_code"
+                header="Code"
+                style={{ width: "80px" }}
+              />
               <Column field="component_name" header="Component" />
-              <Column field="qty_per_unit" header="Per Unit" style={{ width: "80px" }} />
-              <Column field="qty_required" header="Total Required" style={{ width: "100px" }} />
+              <Column
+                field="qty_per_unit"
+                header="Per Unit"
+                style={{ width: "80px" }}
+              />
+              <Column
+                field="qty_required"
+                header="Total Required"
+                style={{ width: "100px" }}
+              />
               <Column field="uom" header="UOM" style={{ width: "60px" }} />
             </DataTable>
-            <p className="text-xs text-gray-500 mt-2">
-              Components are auto-calculated from BOM based on production quantity
+            <p className="mt-2 text-xs text-gray-500">
+              Components are auto-calculated from BOM based on production
+              quantity
             </p>
           </Card>
         )}
 
-        <div className="flex gap-2 justify-end">
-          <Button label="Cancel" severity="secondary" onClick={() => navigate("/manufacturing-orders")} />
-          <Button label={isEdit ? "Update" : "Create"} icon="pi pi-check"
-            loading={saving} onClick={handleSubmit} />
+        <div className="flex justify-end gap-2">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            onClick={() => navigate("/manufacturing-orders")}
+          />
+          <Button
+            label={isEdit ? "Update" : "Create"}
+            icon="pi pi-check"
+            loading={saving}
+            onClick={handleSubmit}
+          />
         </div>
       </form>
     </div>
   );
 }
+

@@ -1,16 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { Page } from "components/shared/Page";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { Tag } from "primereact/tag";
-import { PurchaseOrdersService } from "services/reports/purchase/purchaseOrders";
-import { acceptPO } from "redux/slice/salesOrderSlice";
-
-const MOCK_ITEMS = [
-  { id: 1, name: "Premium Basmati Rice", quantity: 50, rate: 85, total: 4250 },
-  { id: 2, name: "Organic Wheat Flour", quantity: 200, rate: 45, total: 9000 },
-];
+import { PurchaseOrderService, SalesOrderService } from "services/transactions/transactions.service";
 
 const TABS = [
   { key: "all", label: "All" },
@@ -21,86 +14,148 @@ const TABS = [
 
 export default function FromPOGenerationPage() {
   const toast = useRef(null);
-  const dispatch = useDispatch();
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [poStatuses, setPoStatuses] = useState({});
   const [collapsedIds, setCollapsedIds] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [activeTab, setActiveTab] = useState("pending");
+  const [poLines, setPoLines] = useState({});
+  const [linesLoading, setLinesLoading] = useState({});
+
+  const fetchPOs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await PurchaseOrderService.getAll({
+        limit: 100,
+      });
+      if (response.success && response.data) {
+        setPurchaseOrders(response.data);
+      } else {
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: response.message || "Failed to load purchase orders",
+        });
+      }
+    } catch {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to load purchase orders",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPOs = async () => {
-      setIsLoading(true);
+    fetchPOs();
+  }, []);
+
+  const toggleCollapse = async (poId) => {
+    const isCurrentlyCollapsed = !collapsedIds.has(poId);
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.has(poId) ? next.delete(poId) : next.add(poId);
+      return next;
+    });
+
+    if (isCurrentlyCollapsed && !poLines[poId]) {
+      setLinesLoading((prev) => ({ ...prev, [poId]: true }));
       try {
-        const response = await PurchaseOrdersService.getPurchaseOrders({
-          length: 50,
-        });
-        if (response.success) {
-          setPurchaseOrders(response.data);
-          const statuses = {};
-          response.data.forEach((_, i) => {
-            statuses[i] = "pending";
-          });
-          setPoStatuses(statuses);
+        const res = await PurchaseOrderService.getById(poId);
+        if (res.success && res.data) {
+          setPoLines((prev) => ({ ...prev, [poId]: res.data.lines || [] }));
         }
       } catch {
         toast.current?.show({
           severity: "error",
           summary: "Error",
-          detail: "Failed to load purchase orders",
+          detail: "Failed to load purchase order details",
         });
       } finally {
-        setIsLoading(false);
+        setLinesLoading((prev) => ({ ...prev, [poId]: false }));
       }
-    };
-    fetchPOs();
-  }, []);
-
-  const toggleCollapse = (idx) => {
-    setCollapsedIds((prev) => {
-      const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
-      return next;
-    });
+    }
   };
 
-  const handleAction = (idx, po, action) => {
-    setActionLoading(`${idx}-${action}`);
-    setTimeout(() => {
-      setPoStatuses((prev) => ({ ...prev, [idx]: action }));
-      setActionLoading(null);
-
-      if (action === "accepted") {
-        // Dispatch to Redux — creates SO in Deliver Products
-        dispatch(acceptPO({ po, items: MOCK_ITEMS }));
+  const handleAccept = async (po) => {
+    setActionLoading(`${po.po_id}-accepted`);
+    try {
+      const res = await SalesOrderService.createFromPO(po.po_id);
+      if (res.success) {
         toast.current?.show({
           severity: "success",
           summary: "PO Accepted ✓",
-          detail: `Sales Order created from ${po.ordernumber}. Check Deliver Products.`,
-          life: 4000,
+          detail: `Sales Order ${res.data.so_number} created from ${po.po_number}. You can confirm/approve it in Sales Orders.`,
+          life: 5000,
         });
+        await fetchPOs();
       } else {
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: res.message || "Failed to generate Sales Order",
+        });
+      }
+    } catch {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to generate Sales Order due to server or network error",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancel = async (po) => {
+    setActionLoading(`${po.po_id}-cancelled`);
+    try {
+      const res = await PurchaseOrderService.cancel(po.po_id);
+      if (res.success) {
         toast.current?.show({
           severity: "warn",
           summary: "PO Cancelled",
-          detail: `${po.ordernumber} has been cancelled`,
+          detail: `${po.po_number} has been cancelled`,
+          life: 4000,
+        });
+        await fetchPOs();
+      } else {
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: res.message || "Failed to cancel PO",
         });
       }
-    }, 900);
+    } catch {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to cancel PO due to server or network error",
+      });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const allEntries = purchaseOrders.map((po, i) => ({ po, i }));
+  const getClientStatus = (po) => {
+    if (po.status === "cancelled") return "cancelled";
+    if (po.linked_so_id) return "accepted";
+    return "pending";
+  };
+
+  const allEntries = purchaseOrders.map((po) => ({ po, status: getClientStatus(po) }));
   const counts = {
     all: allEntries.length,
-    pending: allEntries.filter(({ i }) => poStatuses[i] === "pending").length,
-    accepted: allEntries.filter(({ i }) => poStatuses[i] === "accepted").length,
-    cancelled: allEntries.filter(({ i }) => poStatuses[i] === "cancelled").length,
+    pending: allEntries.filter((e) => e.status === "pending").length,
+    accepted: allEntries.filter((e) => e.status === "accepted").length,
+    cancelled: allEntries.filter((e) => e.status === "cancelled").length,
   };
   const visibleEntries =
     activeTab === "all"
       ? allEntries
-      : allEntries.filter(({ i }) => poStatuses[i] === activeTab);
+      : allEntries.filter((e) => e.status === activeTab);
 
   const tabStyles = {
     pending: { active: "bg-amber-500 text-white border-amber-500" },
@@ -109,12 +164,13 @@ export default function FromPOGenerationPage() {
     all: { active: "bg-primary-500 text-white border-primary-500" },
   };
 
-  const renderPoCard = ({ po, i }) => {
-    const status = poStatuses[i] || "pending";
+  const renderPoCard = ({ po, status }) => {
     const isDone = status !== "pending";
-    const isCollapsed = collapsedIds.has(i);
-    const isAccepting = actionLoading === `${i}-accepted`;
-    const isCancelling = actionLoading === `${i}-cancelled`;
+    const isCollapsed = !collapsedIds.has(po.po_id);
+    const isAccepting = actionLoading === `${po.po_id}-accepted`;
+    const isCancelling = actionLoading === `${po.po_id}-cancelled`;
+    const lines = poLines[po.po_id] || [];
+    const isLinesLoading = linesLoading[po.po_id];
 
     const borderColor =
       status === "accepted"
@@ -125,7 +181,7 @@ export default function FromPOGenerationPage() {
 
     return (
       <div
-        key={i}
+        key={po.po_id}
         className={`rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 dark:border-dark-600 dark:bg-dark-800 ${borderColor} ${isDone ? "opacity-75" : ""}`}
       >
         {/* Card Header */}
@@ -152,9 +208,9 @@ export default function FromPOGenerationPage() {
             </div>
             <div>
               <p className="font-bold text-gray-800 dark:text-white">
-                {po.ordernumber}
+                {po.po_number}
               </p>
-              <p className="text-sm text-gray-500">{po.supplier}</p>
+              <p className="text-sm text-gray-500">{po.vendor_name}</p>
             </div>
           </div>
 
@@ -163,7 +219,7 @@ export default function FromPOGenerationPage() {
             {status === "accepted" && <Tag value="Accepted" severity="success" />}
             {status === "cancelled" && <Tag value="Cancelled" severity="danger" />}
             <button
-              onClick={() => toggleCollapse(i)}
+              onClick={() => toggleCollapse(po.po_id)}
               className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-700"
             >
               <i
@@ -177,31 +233,45 @@ export default function FromPOGenerationPage() {
         {!isCollapsed && (
           <div className="border-t border-gray-100 dark:border-dark-700">
             <div className="px-5 py-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 dark:border-dark-700">
-                    <th className="pb-2 text-left font-semibold">Product</th>
-                    <th className="pb-2 text-right font-semibold">Qty</th>
-                    <th className="pb-2 text-right font-semibold">Rate</th>
-                    <th className="pb-2 text-right font-semibold">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {MOCK_ITEMS.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-gray-50 last:border-0 dark:border-dark-700"
-                    >
-                      <td className="py-2.5 text-gray-700 dark:text-gray-300">{item.name}</td>
-                      <td className="py-2.5 text-right text-gray-600 dark:text-gray-400">{item.quantity}</td>
-                      <td className="py-2.5 text-right text-gray-600 dark:text-gray-400">₹{item.rate}</td>
-                      <td className="py-2.5 text-right font-semibold text-gray-800 dark:text-white">
-                        ₹{item.total.toLocaleString("en-IN")}
-                      </td>
+              {isLinesLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <i className="pi pi-spin pi-spinner text-primary-500 text-2xl" />
+                </div>
+              ) : lines.length > 0 ? (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 dark:border-dark-700">
+                      <th className="pb-2 text-left font-semibold">Product</th>
+                      <th className="pb-2 text-right font-semibold">Qty</th>
+                      <th className="pb-2 text-right font-semibold">Rate</th>
+                      <th className="pb-2 text-right font-semibold">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lines.map((line) => (
+                      <tr
+                        key={line.pol_id}
+                        className="border-b border-gray-50 last:border-0 dark:border-dark-700"
+                      >
+                        <td className="py-2.5 text-gray-700 dark:text-gray-300">
+                          {line.product_name} ({line.product_code})
+                        </td>
+                        <td className="py-2.5 text-right text-gray-600 dark:text-gray-400">
+                          {parseFloat(line.qty_ordered)} {line.uom}
+                        </td>
+                        <td className="py-2.5 text-right text-gray-600 dark:text-gray-400">
+                          ₹{parseFloat(line.unit_cost).toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-2.5 text-right font-semibold text-gray-800 dark:text-white">
+                          ₹{parseFloat(line.subtotal).toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-gray-500 text-center py-4">No line items in this order.</p>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -214,7 +284,7 @@ export default function FromPOGenerationPage() {
                   outlined
                   size="small"
                   disabled={!!actionLoading}
-                  onClick={() => handleAction(i, po, "cancelled")}
+                  onClick={() => handleCancel(po)}
                 />
                 <Button
                   label={isAccepting ? "Accepting..." : "Accept"}
@@ -222,7 +292,7 @@ export default function FromPOGenerationPage() {
                   severity="success"
                   size="small"
                   disabled={!!actionLoading}
-                  onClick={() => handleAction(i, po, "accepted")}
+                  onClick={() => handleAccept(po)}
                 />
               </div>
             )}
@@ -237,7 +307,7 @@ export default function FromPOGenerationPage() {
               >
                 <i className={`pi ${status === "accepted" ? "pi-check-circle" : "pi-times-circle"}`} />
                 {status === "accepted"
-                  ? "Sales Order created — visible in Deliver Products"
+                  ? `Sales Order ${po.linked_so_number} created — confirm/approve it in Sales Orders`
                   : "This PO was cancelled"}
               </div>
             )}

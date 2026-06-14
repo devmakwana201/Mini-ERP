@@ -8,11 +8,11 @@ module.exports = {
      */
     checkRoleExists: async (rolename, excludeId = null) => {
         try {
-            let sql = `SELECT roleid FROM rolemaster WHERE LOWER(rolename) = LOWER(?) AND isdeleted = 0`;
+            let sql = `SELECT role_id AS roleid FROM roles WHERE LOWER(name) = LOWER(?) AND is_deleted = 0`;
             const params = [rolename];
             
             if (excludeId) {
-                sql += ` AND roleid != ?`;
+                sql += ` AND role_id != ?`;
                 params.push(excludeId);
             }
             
@@ -30,10 +30,10 @@ module.exports = {
         const { start = 1, length = 10, filters, sortField = 'roleid', sortOrder = 'desc' } = req.query;
 
         let sql = `
-            SELECT roleid, rolename, type,
-                   createdby, createddate, modifedby, modifeddate, ipaddress, isdeleted
-            FROM rolemaster
-            WHERE isdeleted = 0
+            SELECT role_id AS roleid, name AS rolename, '1' AS type,
+                   created_by AS createdby, created_at AS createddate, updated_by AS modifedby, updated_at AS modifeddate, is_deleted AS isdeleted
+            FROM roles
+            WHERE is_deleted = 0
         `;
 
         const params = [];
@@ -58,28 +58,22 @@ module.exports = {
         // Apply filters
         const rolename = getFilterValue("rolename");
         if (rolename) {
-            sql += ` AND rolename LIKE ?`;
+            sql += ` AND name LIKE ?`;
             params.push(`%${rolename}%`);
         }
 
-        // Type filter
-        const type = getFilterValue("type");
-        if (type) {
-            sql += ` AND type = ?`;
-            params.push(type);
-        }
-
-
         const global = getFilterValue("global");
         if (global) {
-            sql += ` AND rolename LIKE ?`;
+            sql += ` AND name LIKE ?`;
             const g = `%${global}%`;
             params.push(g);
         }
 
         // Sorting
         const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-        sql += ` ORDER BY ${sortField} ${order}`;
+        let orderField = 'role_id';
+        if (sortField === 'rolename') orderField = 'name';
+        sql += ` ORDER BY ${orderField} ${order}`;
 
         // Pagination
         const startNum = parseInt(start);
@@ -93,23 +87,17 @@ module.exports = {
         const data = await db.getResults(sql, params);
 
         // Count total records
-        let countSql = `SELECT COUNT(*) as total FROM rolemaster WHERE isdeleted = 0`;
+        let countSql = `SELECT COUNT(*) as total FROM roles WHERE is_deleted = 0`;
         let countParams = [];
 
         // Apply same filters for count
         if (rolename) {
-            countSql += ` AND rolename LIKE ?`;
+            countSql += ` AND name LIKE ?`;
             countParams.push(`%${rolename}%`);
         }
 
-        if (type) {
-            countSql += ` AND type = ?`;
-            countParams.push(type);
-        }
-
-
         if (global) {
-            countSql += ` AND rolename LIKE ?`;
+            countSql += ` AND name LIKE ?`;
             const g = `%${global}%`;
             countParams.push(g);
         }
@@ -134,10 +122,10 @@ module.exports = {
      */
     getData: async (id) => {
         const sql = `
-            SELECT roleid, rolename, type,
-                   createdby, createddate, modifedby, modifeddate, ipaddress
-            FROM rolemaster 
-            WHERE roleid = ? AND isdeleted = 0
+            SELECT role_id AS roleid, name AS rolename, '1' AS type,
+                   created_by AS createdby, created_at AS createddate, updated_by AS modifedby, updated_at AS modifeddate
+            FROM roles 
+            WHERE role_id = ? AND is_deleted = 0
         `;
         const results = await db.getResults(sql, [id]);
 
@@ -151,15 +139,17 @@ module.exports = {
      */
     create: async (data) => {
         try {
-            // Add timestamps
-            data.createddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            data.modifeddate = moment().format("YYYY-MM-DD HH:mm:ss");
+            const dbData = {
+                name: data.rolename,
+                permissions: JSON.stringify({ access: 'full' }), // default permissions
+                is_deleted: 0,
+                created_by: data.createdby || null,
+                created_at: data.createddate || moment().format("YYYY-MM-DD HH:mm:ss"),
+                updated_by: data.modifedby || null,
+                updated_at: data.modifeddate || moment().format("YYYY-MM-DD HH:mm:ss")
+            };
             
-            // Set defaults
-            data.isdeleted = 0;
-            data.type = data.type || 1;
-            
-            const result = await db.insert('rolemaster', data);
+            const result = await db.insert('roles', dbData);
             if (!result.insertId) {
                 return { status: 500, success: 0, msg: "Failed to create role" };
             }
@@ -183,12 +173,14 @@ module.exports = {
      */
     update: async (id, data) => {
         try {
-            // Add modified timestamp
-            data.modifeddate = moment().format("YYYY-MM-DD HH:mm:ss");
+            const dbUpdates = {};
+            if (data.rolename !== undefined) dbUpdates.name = data.rolename;
+            if (data.modifedby !== undefined) dbUpdates.updated_by = data.modifedby;
+            dbUpdates.updated_at = data.modifeddate || moment().format("YYYY-MM-DD HH:mm:ss");
             
-            const result = await db.update('rolemaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'roleid', value: id }, { column: 'isdeleted', value: 0 }]
+            const result = await db.update('roles', 
+                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
+                [{ column: 'role_id', value: id }, { column: 'is_deleted', value: 0 }]
             );
             if (!result.affectedRows) {
                 return { status: 404, success: 0, msg: "Role not found" };
@@ -213,9 +205,14 @@ module.exports = {
      */
     delete: async (id, data) => {
         try {
-            const result = await db.update('rolemaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'roleid', value: id }]
+            const dbUpdates = {
+                is_deleted: 1,
+                updated_by: data.modifedby,
+                updated_at: data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss")
+            };
+            const result = await db.update('roles', 
+                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
+                [{ column: 'role_id', value: id }]
             );
             if (!result.affectedRows) {
                 return { status: 500, success: 0, msg: "Role not found" };
@@ -232,23 +229,19 @@ module.exports = {
     getAllRoles: async () => {
         try {
             const sql = `
-                SELECT roleid, rolename, type 
-                FROM rolemaster 
-                WHERE isdeleted = 0
-                ORDER BY rolename ASC
+                SELECT role_id AS roleid, name AS rolename, '1' AS type 
+                FROM roles 
+                WHERE is_deleted = 0
+                ORDER BY name ASC
             `;
             return await db.getResults(sql);
         } catch (error) {
             winston.error(`Error getting all roles: ${error.message}`, {
                 source: "role.model.js",
                 function: "getAllRoles",
-                error: error.message,
-                code: error.code,
-                errno: error.errno,
-                stack: error.stack
+                error: error.message
             });
             return [];
         }
     },
-
 };

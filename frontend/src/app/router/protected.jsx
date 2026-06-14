@@ -312,22 +312,15 @@ export const useProtectedRoutes = () => {
             children: [
               {
                 index: true,
-                element: <Navigate to="/procurement/purchase-order" />,
+                element: <Navigate to="/purchase-orders" />,
               },
               {
                 path: "purchase-order",
-                lazy: async () => ({
-                  Component: (
-                    await import("app/pages/procurement/purchase-order")
-                  ).default,
-                }),
+                element: <Navigate to="/purchase-orders" />,
               },
               {
                 path: "create-po",
-                lazy: async () => ({
-                  Component: (await import("app/pages/procurement/create-po"))
-                    .default,
-                }),
+                element: <Navigate to="/purchase-orders/new" />,
               },
             ],
           },
@@ -370,6 +363,121 @@ export const useProtectedRoutes = () => {
             lazy: async () => ({
               Component: (await import("app/pages/approvals")).default,
             }),
+          },
+
+          // ─── Partners ─────────────────────────────────────────────────
+          {
+            path: "partners",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/partners/PartnerList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/partners/PartnerForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/partners/PartnerDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/partners/PartnerForm")).default }) },
+            ],
+          },
+
+          // ─── Bill of Materials ────────────────────────────────────────
+          {
+            path: "bom",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/bom/BomList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/bom/BomForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/bom/BomDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/bom/BomForm")).default }) },
+            ],
+          },
+
+          // ─── Products ─────────────────────────────────────────────────
+          {
+            path: "products",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/products/ProductList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/products/ProductForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/products/ProductDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/products/ProductForm")).default }) },
+            ],
+          },
+
+          // ─── Sales Orders ─────────────────────────────────────────────
+          {
+            path: "sales-orders",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/sales-orders/SoList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/sales-orders/SoForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/sales-orders/SoDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/sales-orders/SoForm")).default }) },
+            ],
+          },
+
+          // ─── Purchase Orders ──────────────────────────────────────────
+          {
+            path: "purchase-orders",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/purchase-orders/PoList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/purchase-orders/PoForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/purchase-orders/PoDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/purchase-orders/PoForm")).default }) },
+            ],
+          },
+
+          // ─── Manufacturing Orders ─────────────────────────────────────
+          {
+            path: "manufacturing-orders",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/manufacturing-orders/MoList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/manufacturing-orders/MoForm")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/manufacturing-orders/MoDetail")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/manufacturing-orders/MoForm")).default }) },
+            ],
+          },
+
+          // ─── Work Orders ──────────────────────────────────────────────
+          {
+            path: "work-orders",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/work-orders/WorkOrderList")).default }) },
+              { path: ":id", lazy: async () => ({ Component: (await import("app/pages/erp/work-orders/WorkOrderDetail")).default }) },
+            ],
+          },
+
+          // ─── Inventory ────────────────────────────────────────────────
+          {
+            path: "inventory",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/inventory/StockOverview")).default }) },
+              { path: "transactions", lazy: async () => ({ Component: (await import("app/pages/erp/inventory/TransactionList")).default }) },
+              { path: "ledger/:productId", lazy: async () => ({ Component: (await import("app/pages/erp/inventory/LedgerView")).default }) },
+              { path: "reservations", lazy: async () => ({ Component: (await import("app/pages/erp/inventory/ReservationList")).default }) },
+              { path: "warehouses", lazy: async () => ({ Component: (await import("app/pages/erp/inventory/WarehouseList")).default }) },
+            ],
+          },
+
+          // ─── Procurement Rules ────────────────────────────────────────
+          {
+            path: "procurement-rules",
+            children: [
+              { index: true, lazy: async () => ({ Component: (await import("app/pages/erp/procurement-rules/ProcurementRuleList")).default }) },
+              { path: "new", lazy: async () => ({ Component: (await import("app/pages/erp/procurement-rules/ProcurementRuleForm")).default }) },
+              { path: ":id/edit", lazy: async () => ({ Component: (await import("app/pages/erp/procurement-rules/ProcurementRuleForm")).default }) },
+            ],
+          },
+
+          // ─── Audit Logs ───────────────────────────────────────────────
+          {
+            path: "audit-logs",
+            lazy: async () => ({ Component: (await import("app/pages/erp/audit-logs/AuditLogList")).default }),
+          },
+
+          // ─── Work Centers & Operations ────────────────────────────────
+          {
+            path: "work-centers",
+            lazy: async () => ({ Component: (await import("app/pages/erp/work-centers/WorkCenterList")).default }),
+          },
+
+          // ─── ERP Dashboard ────────────────────────────────────────────
+          {
+            path: "erp-dashboard",
+            lazy: async () => ({ Component: (await import("app/pages/erp/dashboard/Dashboard")).default }),
           },
         ],
       },
