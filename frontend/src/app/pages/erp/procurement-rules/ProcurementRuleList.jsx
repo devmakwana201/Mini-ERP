@@ -39,7 +39,7 @@ export default function ProcurementRuleList() {
         </div>
         <div className="flex gap-2">
           <Button label="Run Check" icon="pi pi-bolt" outlined onClick={runCheck} />
-          <Button label="New Rule" icon="pi pi-plus" onClick={() => navigate("/procurement-rules/new")} />
+          <Button label="New Rule" icon="pi pi-plus" onClick={() => navigate("/erp/procurement-rules/new")} />
         </div>
       </div>
 

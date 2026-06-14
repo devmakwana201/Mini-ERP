@@ -108,7 +108,7 @@ export default function Dashboard() {
             </div>
           </div>
           <Button label="View All Products" text size="small" className="mt-3 w-full text-xs"
-            onClick={() => navigate("/products")} />
+            onClick={() => navigate("/erp/products")} />
         </div>
 
         {/* SO Stats */}
@@ -125,7 +125,7 @@ export default function Dashboard() {
             ))}
           </div>
           <Button label="View Orders" text size="small" className="mt-3 w-full text-xs"
-            onClick={() => navigate("/sales-orders")} />
+            onClick={() => navigate("/erp/sales-orders")} />
         </div>
 
         {/* MO Stats */}
@@ -142,7 +142,7 @@ export default function Dashboard() {
             ))}
           </div>
           <Button label="View MOs" text size="small" className="mt-3 w-full text-xs"
-            onClick={() => navigate("/manufacturing-orders")} />
+            onClick={() => navigate("/erp/manufacturing-orders")} />
         </div>
       </div>
 
@@ -162,7 +162,7 @@ export default function Dashboard() {
             <Column header="Free" body={(r) => <span className="text-red-500 font-bold">{parseFloat(r.free_to_use_qty || 0)}</span>} />
             <Column header="Min" body={(r) => parseFloat(r.min_stock_qty || 0)} />
             <Column header="" body={(r) => (
-              <Button label="View" text size="small" onClick={() => navigate(`/products/${r.product_id}`)} />
+              <Button label="View" text size="small" onClick={() => navigate(`/erp/products/${r.product_id}`)} />
             )} />
           </DataTable>
         </div>

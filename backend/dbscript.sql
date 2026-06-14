@@ -674,23 +674,23 @@ INSERT INTO users
     (user_id, role_id, name, email, password_hash, status, is_deleted, created_by, updated_by)
 VALUES
 -- Admins
-(1,  1, 'Rajesh Sharma',  'rajesh@shivfurniture.in',    '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, NULL, NULL),
-(2,  1, 'Priya Mehta',    'priya@shivfurniture.in',     '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(1,  1, 'Admin',          'admin@gmail.com',             '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, NULL, NULL),
+(2,  1, 'Rajesh Sharma',  'rajesh@shivfurniture.in',     '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
 -- Sales Users
-(3,  2, 'Amit Patel',     'amit.sales@shivfurniture.in','$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
-(4,  2, 'Sneha Joshi',    'sneha.sales@shivfurniture.in','$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
+(3,  2, 'Amit Patel',     'amit.sales@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(4,  2, 'Sneha Joshi',    'sneha.sales@shivfurniture.in','$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
 -- Purchase Users
-(5,  3, 'Vikram Desai',   'vikram.po@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
-(6,  3, 'Kavita Rao',     'kavita.po@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(5,  3, 'Vikram Desai',   'vikram.po@shivfurniture.in',  '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(6,  3, 'Kavita Rao',     'kavita.po@shivfurniture.in',  '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
 -- Manufacturing Users
-(7,  4, 'Suresh Nair',    'suresh.mfg@shivfurniture.in','$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
-(8,  4, 'Deepa Iyer',     'deepa.mfg@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
+(7,  4, 'Suresh Nair',    'suresh.mfg@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(8,  4, 'Deepa Iyer',     'deepa.mfg@shivfurniture.in',  '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
 -- Inventory Managers
-(9,  5, 'Manish Gupta',   'manish.inv@shivfurniture.in','$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
-(10, 5, 'Rekha Singh',    'rekha.inv@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
+(9,  5, 'Manish Gupta',   'manish.inv@shivfurniture.in', '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(10, 5, 'Rekha Singh',    'rekha.inv@shivfurniture.in',  '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
 -- Business Owners
-(11, 6, 'Shiv Agarwal',   'shiv@shivfurniture.in',      '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','active',   FALSE, 1,    NULL),
-(12, 6, 'Meena Agarwal',  'meena@shivfurniture.in',     '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm','inactive', FALSE, 1,    NULL);
+(11, 6, 'Shiv Agarwal',   'shiv@shivfurniture.in',       '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'active',   FALSE, 1,    NULL),
+(12, 6, 'Meena Agarwal',  'meena@shivfurniture.in',      '$2b$10$45Co.l9RKkoRHAZ/08PvGe7CE6wGklnOgkArH.zVtjNt7h1UdnWfm', 'inactive', FALSE, 1,    NULL);
 
 -- 3. PARTNERS
 INSERT INTO partners

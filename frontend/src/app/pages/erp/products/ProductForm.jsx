@@ -62,7 +62,7 @@ export default function ProductForm() {
       : await ProductService.create(form);
     if (res.success) {
       toast.current?.show({ severity: "success", summary: "Saved", detail: "Product saved" });
-      setTimeout(() => navigate("/products"), 800);
+      setTimeout(() => navigate("/erp/products"), 800);
     } else {
       toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     }
@@ -75,7 +75,7 @@ export default function ProductForm() {
     <div className="p-4 max-w-2xl mx-auto">
       <Toast ref={toast} />
       <div className="mb-4 flex items-center gap-3">
-        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/products")} />
+        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/products")} />
         <h1 className="text-xl font-bold">{isEdit ? "Edit Product" : "New Product"}</h1>
       </div>
 
@@ -145,7 +145,7 @@ export default function ProductForm() {
         </div>
 
         <div className="flex gap-3 justify-end">
-          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/products")} type="button" />
+          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/erp/products")} type="button" />
           <Button label={saving ? "Saving..." : "Save Product"} icon="pi pi-save" type="submit" disabled={saving} />
         </div>
       </form>

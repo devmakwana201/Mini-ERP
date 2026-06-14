@@ -73,7 +73,7 @@ export default function BomForm() {
 
     if (res.success) {
       toast.current?.show({ severity: "success", summary: "Saved", detail: "BOM saved successfully" });
-      setTimeout(() => navigate("/bom"), 800);
+      setTimeout(() => navigate("/erp/bom"), 800);
     } else {
       toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     }
@@ -86,7 +86,7 @@ export default function BomForm() {
     <div className="p-4 max-w-3xl mx-auto">
       <Toast ref={toast} />
       <div className="mb-4 flex items-center gap-3">
-        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/bom")} />
+        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/bom")} />
         <h1 className="text-xl font-bold">{isEdit ? "Edit BOM" : "New Bill of Materials"}</h1>
       </div>
 
@@ -146,7 +146,7 @@ export default function BomForm() {
         )}
 
         <div className="flex gap-3 justify-end">
-          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/bom")} type="button" />
+          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/erp/bom")} type="button" />
           <Button label={saving ? "Saving..." : "Save BOM"} icon="pi pi-save" type="submit" disabled={saving} />
         </div>
       </form>

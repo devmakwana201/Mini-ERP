@@ -39,7 +39,7 @@ export default function BomDetail() {
       acceptClassName: "p-button-danger",
       accept: async () => {
         const res = await BomService.delete(id);
-        if (res.success) navigate("/bom");
+        if (res.success) navigate("/erp/bom");
         else toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
       },
     });
@@ -81,7 +81,7 @@ export default function BomDetail() {
 
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/bom")} />
+          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/bom")} />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{bom.bom_name}</h1>
             <div className="flex gap-2 mt-1">
@@ -92,7 +92,7 @@ export default function BomDetail() {
         </div>
         <div className="flex gap-2">
           <Button label="Add Component" icon="pi pi-plus" outlined onClick={() => setAddLineDialog(true)} />
-          <Button label="Edit" icon="pi pi-pencil" outlined onClick={() => navigate(`/bom/${id}/edit`)} />
+          <Button label="Edit" icon="pi pi-pencil" outlined onClick={() => navigate(`/erp/bom/${id}/edit`)} />
           <Button label="Delete" icon="pi pi-trash" severity="danger" outlined onClick={handleDelete} />
         </div>
       </div>

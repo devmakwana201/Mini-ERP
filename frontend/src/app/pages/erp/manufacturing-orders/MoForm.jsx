@@ -116,7 +116,7 @@ export default function MoForm() {
         summary: "Saved",
         detail: "Manufacturing order saved",
       });
-      setTimeout(() => navigate("/manufacturing-orders"), 1000);
+      setTimeout(() => navigate("/erp/manufacturing-orders"), 1000);
     } else {
       toast.current?.show({
         severity: "error",
@@ -141,7 +141,7 @@ export default function MoForm() {
         <Button
           icon="pi pi-arrow-left"
           text
-          onClick={() => navigate("/manufacturing-orders")}
+          onClick={() => navigate("/erp/manufacturing-orders")}
         />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Manufacturing Order" : "New Manufacturing Order"}
@@ -230,7 +230,7 @@ export default function MoForm() {
           <Button
             label="Cancel"
             severity="secondary"
-            onClick={() => navigate("/manufacturing-orders")}
+            onClick={() => navigate("/erp/manufacturing-orders")}
           />
           <Button
             label={isEdit ? "Update" : "Create"}

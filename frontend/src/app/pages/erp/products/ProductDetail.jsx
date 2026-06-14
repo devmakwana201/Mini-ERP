@@ -60,7 +60,7 @@ export default function ProductDetail() {
 
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/products")} />
+          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/products")} />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{product.product_name}</h1>
             <p className="text-sm text-gray-500">{product.product_code} · {product.uom}</p>
@@ -68,7 +68,7 @@ export default function ProductDetail() {
         </div>
         <div className="flex gap-2">
           <Button label="Adjust Stock" icon="pi pi-sliders-h" outlined onClick={() => setAdjustDialog(true)} />
-          <Button label="Edit" icon="pi pi-pencil" outlined onClick={() => navigate(`/products/${id}/edit`)} />
+          <Button label="Edit" icon="pi pi-pencil" outlined onClick={() => navigate(`/erp/products/${id}/edit`)} />
         </div>
       </div>
 

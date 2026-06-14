@@ -86,7 +86,7 @@ export default function MoList() {
       icon="pi pi-eye"
       size="small"
       text
-      onClick={() => navigate(`/manufacturing-orders/${row.mo_id}`)}
+      onClick={() => navigate(`/erp/manufacturing-orders/${row.mo_id}`)}
     />
   );
 
@@ -103,7 +103,7 @@ export default function MoList() {
         <Button
           label="New Order"
           icon="pi pi-plus"
-          onClick={() => navigate("/manufacturing-orders/new")}
+          onClick={() => navigate("/erp/manufacturing-orders/new")}
         />
       </div>
 

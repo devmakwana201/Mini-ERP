@@ -58,7 +58,7 @@ export default function PartnerList() {
 
   const actionBody = (row) => (
     <Button icon="pi pi-eye" size="small" text
-      onClick={() => navigate(`/partners/${row.partner_id}`)} />
+      onClick={() => navigate(`/erp/partners/${row.partner_id}`)} />
   );
 
   return (
@@ -70,7 +70,7 @@ export default function PartnerList() {
           <p className="text-sm text-gray-500">{total} total — vendors &amp; customers</p>
         </div>
         <Button label="New Partner" icon="pi pi-plus"
-          onClick={() => navigate("/partners/new")} />
+          onClick={() => navigate("/erp/partners/new")} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-3 items-center">

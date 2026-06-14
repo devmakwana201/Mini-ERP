@@ -35,7 +35,7 @@ export default function PartnerDetail() {
       acceptClassName: "p-button-danger",
       accept: async () => {
         const res = await PartnerService.delete(id);
-        if (res.success) navigate("/partners");
+        if (res.success) navigate("/erp/partners");
         else toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
       },
     });
@@ -51,7 +51,7 @@ export default function PartnerDetail() {
 
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/partners")} />
+          <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/partners")} />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{partner.name}</h1>
             <div className="flex gap-2 mt-1">
@@ -64,7 +64,7 @@ export default function PartnerDetail() {
         </div>
         <div className="flex gap-2">
           <Button label="Edit" icon="pi pi-pencil" outlined
-            onClick={() => navigate(`/partners/${id}/edit`)} />
+            onClick={() => navigate(`/erp/partners/${id}/edit`)} />
           <Button label="Delete" icon="pi pi-trash" severity="danger" outlined
             onClick={handleDelete} />
         </div>

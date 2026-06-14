@@ -100,7 +100,7 @@ export default function WorkOrderDetail() {
           <Button
             icon="pi pi-arrow-left"
             text
-            onClick={() => navigate("/work-orders")}
+            onClick={() => navigate("/erp/work-orders")}
           />
           <div>
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">
@@ -243,7 +243,7 @@ export default function WorkOrderDetail() {
           label="Back"
           icon="pi pi-arrow-left"
           text
-          onClick={() => navigate("/work-orders")}
+          onClick={() => navigate("/erp/work-orders")}
         />
       </div>
 

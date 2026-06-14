@@ -116,7 +116,7 @@ export default function SoDetail() {
           summary: "Cancelled",
           detail: "Sales order cancelled",
         });
-        setTimeout(() => navigate("/sales-orders"), 1000);
+        setTimeout(() => navigate("/erp/sales-orders"), 1000);
       } else {
         toast.current?.show({
           severity: "error",
@@ -153,7 +153,7 @@ export default function SoDetail() {
           <Button
             icon="pi pi-arrow-left"
             text
-            onClick={() => navigate("/sales-orders")}
+            onClick={() => navigate("/erp/sales-orders")}
           />
           <div>
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">
@@ -282,7 +282,7 @@ export default function SoDetail() {
               label="Edit"
               icon="pi pi-pencil"
               text
-              onClick={() => navigate(`/sales-orders/${id}/edit`)}
+              onClick={() => navigate(`/erp/sales-orders/${id}/edit`)}
             />
           </>
         )}

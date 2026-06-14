@@ -116,7 +116,7 @@ export default function PoDetail() {
           summary: "Cancelled",
           detail: "Purchase order cancelled",
         });
-        setTimeout(() => navigate("/purchase-orders"), 1000);
+        setTimeout(() => navigate("/erp/purchase-orders"), 1000);
       } else {
         toast.current?.show({
           severity: "error",
@@ -154,7 +154,7 @@ export default function PoDetail() {
           <Button
             icon="pi pi-arrow-left"
             text
-            onClick={() => navigate("/purchase-orders")}
+            onClick={() => navigate("/erp/purchase-orders")}
           />
           <div>
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">
@@ -282,7 +282,7 @@ export default function PoDetail() {
               label="Edit"
               icon="pi pi-pencil"
               text
-              onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+              onClick={() => navigate(`/erp/purchase-orders/${id}/edit`)}
             />
           </>
         )}

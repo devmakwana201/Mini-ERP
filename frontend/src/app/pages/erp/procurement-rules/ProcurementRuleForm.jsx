@@ -47,7 +47,7 @@ export default function ProcurementRuleForm() {
   const save = async () => {
     const payload = { ...form };
     const res = id ? await ProcurementRuleService.update(id, payload) : await ProcurementRuleService.create(payload);
-    if (res.success) navigate("/procurement-rules");
+    if (res.success) navigate("/erp/procurement-rules");
     else toast.current?.show({ severity: "error", summary: "Error", detail: res.message || res.error?.message });
   };
 
@@ -72,7 +72,7 @@ export default function ProcurementRuleForm() {
 
       <div className="mt-6 flex gap-2">
         <Button label="Save" icon="pi pi-check" onClick={save} />
-        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => navigate("/procurement-rules")} />
+        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => navigate("/erp/procurement-rules")} />
       </div>
     </div>
   );

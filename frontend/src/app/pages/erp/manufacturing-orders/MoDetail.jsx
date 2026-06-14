@@ -107,7 +107,7 @@ export default function MoDetail() {
           summary: "Cancelled",
           detail: "Manufacturing order cancelled",
         });
-        setTimeout(() => navigate("/manufacturing-orders"), 1000);
+        setTimeout(() => navigate("/erp/manufacturing-orders"), 1000);
       } else {
         toast.current?.show({
           severity: "error",
@@ -148,7 +148,7 @@ export default function MoDetail() {
           <Button
             icon="pi pi-arrow-left"
             text
-            onClick={() => navigate("/manufacturing-orders")}
+            onClick={() => navigate("/erp/manufacturing-orders")}
           />
           <div>
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">
@@ -292,7 +292,7 @@ export default function MoDetail() {
               label="Edit"
               icon="pi pi-pencil"
               text
-              onClick={() => navigate(`/manufacturing-orders/${id}/edit`)}
+              onClick={() => navigate(`/erp/manufacturing-orders/${id}/edit`)}
             />
           </>
         )}

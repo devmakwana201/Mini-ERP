@@ -161,7 +161,7 @@ export default function PoForm() {
         summary: "Saved",
         detail: "Purchase order saved",
       });
-      setTimeout(() => navigate("/purchase-orders"), 1000);
+      setTimeout(() => navigate("/erp/purchase-orders"), 1000);
     } else {
       toast.current?.show({
         severity: "error",
@@ -186,7 +186,7 @@ export default function PoForm() {
         <Button
           icon="pi pi-arrow-left"
           text
-          onClick={() => navigate("/purchase-orders")}
+          onClick={() => navigate("/erp/purchase-orders")}
         />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Purchase Order" : "New Purchase Order"}
@@ -349,7 +349,7 @@ export default function PoForm() {
           <Button
             label="Cancel"
             severity="secondary"
-            onClick={() => navigate("/purchase-orders")}
+            onClick={() => navigate("/erp/purchase-orders")}
           />
           <Button
             label={isEdit ? "Update" : "Create"}

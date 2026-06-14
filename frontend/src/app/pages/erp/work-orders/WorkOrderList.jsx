@@ -86,7 +86,7 @@ export default function WorkOrderList() {
       icon="pi pi-eye"
       size="small"
       text
-      onClick={() => navigate(`/work-orders/${row.wo_id}`)}
+      onClick={() => navigate(`/erp/work-orders/${row.wo_id}`)}
     />
   );
 

@@ -102,7 +102,7 @@ export default function SoList() {
       icon="pi pi-eye"
       size="small"
       text
-      onClick={() => navigate(`/sales-orders/${row.so_id}`)}
+      onClick={() => navigate(`/erp/sales-orders/${row.so_id}`)}
     />
   );
 
@@ -119,7 +119,7 @@ export default function SoList() {
         <Button
           label="New Order"
           icon="pi pi-plus"
-          onClick={() => navigate("/sales-orders/new")}
+          onClick={() => navigate("/erp/sales-orders/new")}
         />
       </div>
 

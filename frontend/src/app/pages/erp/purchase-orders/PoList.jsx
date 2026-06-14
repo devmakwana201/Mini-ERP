@@ -86,7 +86,7 @@ export default function PoList() {
       icon="pi pi-eye"
       size="small"
       text
-      onClick={() => navigate(`/purchase-orders/${row.po_id}`)}
+      onClick={() => navigate(`/erp/purchase-orders/${row.po_id}`)}
     />
   );
 
@@ -103,7 +103,7 @@ export default function PoList() {
         <Button
           label="New Order"
           icon="pi pi-plus"
-          onClick={() => navigate("/purchase-orders/new")}
+          onClick={() => navigate("/erp/purchase-orders/new")}
         />
       </div>
 

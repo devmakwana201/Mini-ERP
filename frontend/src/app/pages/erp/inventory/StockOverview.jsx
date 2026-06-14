@@ -53,8 +53,8 @@ export default function StockOverview() {
           <p className="text-sm text-gray-500">{products.length} products loaded</p>
         </div>
         <div className="flex gap-2">
-          <Button label="Transactions" icon="pi pi-list" outlined onClick={() => navigate("/inventory/transactions")} />
-          <Button label="Reservations" icon="pi pi-lock" outlined onClick={() => navigate("/inventory/reservations")} />
+          <Button label="Transactions" icon="pi pi-list" outlined onClick={() => navigate("/erp/inventory/transactions")} />
+          <Button label="Reservations" icon="pi pi-lock" outlined onClick={() => navigate("/erp/inventory/reservations")} />
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export default function StockOverview() {
         <Column header="Stock" body={stockBody} />
         <Column field="procurement_strategy" header="Strategy" />
         <Column header="" body={(row) => (
-          <Button icon="pi pi-chart-line" text size="small" onClick={() => navigate(`/inventory/ledger/${row.product_id}`)} />
+          <Button icon="pi pi-chart-line" text size="small" onClick={() => navigate(`/erp/inventory/ledger/${row.product_id}`)} />
         )} style={{ width: "60px" }} />
       </DataTable>
     </div>

@@ -155,7 +155,7 @@ export default function SoForm() {
         summary: "Saved",
         detail: "Sales order saved",
       });
-      setTimeout(() => navigate("/sales-orders"), 1000);
+      setTimeout(() => navigate("/erp/sales-orders"), 1000);
     } else {
       toast.current?.show({
         severity: "error",
@@ -180,7 +180,7 @@ export default function SoForm() {
         <Button
           icon="pi pi-arrow-left"
           text
-          onClick={() => navigate("/sales-orders")}
+          onClick={() => navigate("/erp/sales-orders")}
         />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Sales Order" : "New Sales Order"}
@@ -347,7 +347,7 @@ export default function SoForm() {
           <Button
             label="Cancel"
             severity="secondary"
-            onClick={() => navigate("/sales-orders")}
+            onClick={() => navigate("/erp/sales-orders")}
           />
           <Button
             label={isEdit ? "Update" : "Create"}

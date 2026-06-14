@@ -46,7 +46,7 @@ export default function BomList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bill of Materials</h1>
           <p className="text-sm text-gray-500">{total} total BOMs</p>
         </div>
-        <Button label="New BOM" icon="pi pi-plus" onClick={() => navigate("/bom/new")} />
+        <Button label="New BOM" icon="pi pi-plus" onClick={() => navigate("/erp/bom/new")} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-3 items-center">
@@ -65,7 +65,7 @@ export default function BomList() {
         <Column field="line_count" header="Components" />
         <Column header="Status" body={(r) => <Tag value={r.is_active ? "Active" : "Inactive"} severity={r.is_active ? "success" : "danger"} className="text-xs" />} />
         <Column header="" body={(row) => (
-          <Button icon="pi pi-eye" size="small" text onClick={() => navigate(`/bom/${row.bom_id}`)} />
+          <Button icon="pi pi-eye" size="small" text onClick={() => navigate(`/erp/bom/${row.bom_id}`)} />
         )} style={{ width: "60px" }} />
       </DataTable>
 

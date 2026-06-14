@@ -57,7 +57,7 @@ export default function PartnerForm() {
 
     if (res.success) {
       toast.current?.show({ severity: "success", summary: "Saved", detail: "Partner saved successfully" });
-      setTimeout(() => navigate("/partners"), 1000);
+      setTimeout(() => navigate("/erp/partners"), 1000);
     } else {
       toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     }
@@ -70,7 +70,7 @@ export default function PartnerForm() {
     <div className="p-4 max-w-2xl mx-auto">
       <Toast ref={toast} />
       <div className="mb-4 flex items-center gap-3">
-        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/partners")} />
+        <Button icon="pi pi-arrow-left" text onClick={() => navigate("/erp/partners")} />
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">
           {isEdit ? "Edit Partner" : "New Partner"}
         </h1>
@@ -155,7 +155,7 @@ export default function PartnerForm() {
         </Card>
 
         <div className="flex gap-3 justify-end">
-          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/partners")} type="button" />
+          <Button label="Cancel" severity="secondary" outlined onClick={() => navigate("/erp/partners")} type="button" />
           <Button label={saving ? "Saving..." : "Save Partner"} icon="pi pi-save"
             type="submit" disabled={saving} />
         </div>

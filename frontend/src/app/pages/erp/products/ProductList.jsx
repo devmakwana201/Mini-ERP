@@ -76,7 +76,7 @@ export default function ProductList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Products</h1>
           <p className="text-sm text-gray-500">{total} total products</p>
         </div>
-        <Button label="New Product" icon="pi pi-plus" onClick={() => navigate("/products/new")} />
+        <Button label="New Product" icon="pi pi-plus" onClick={() => navigate("/erp/products/new")} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-3 items-center">
@@ -94,7 +94,7 @@ export default function ProductList() {
         <Column header="Stock" body={stockBody} />
         <Column header="Price" body={priceBody} />
         <Column header="" body={(row) => (
-          <Button icon="pi pi-eye" size="small" text onClick={() => navigate(`/products/${row.product_id}`)} />
+          <Button icon="pi pi-eye" size="small" text onClick={() => navigate(`/erp/products/${row.product_id}`)} />
         )} style={{ width: "60px" }} />
       </DataTable>
 
