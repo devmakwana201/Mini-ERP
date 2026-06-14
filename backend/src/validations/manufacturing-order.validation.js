@@ -23,7 +23,7 @@ const updateMoSchema = Joi.object({
 
 /** GET /manufacturing-orders — query params */
 const listMoQuerySchema = Joi.object({
-    status:     Joi.string().valid(...MO_STATUS),
+    status:     Joi.string().valid(...MO_STATUS).allow('', null).optional(),
     mo_type:    Joi.string().valid(...MO_TYPE),
     product_id: Joi.number().integer(),
     so_id:      Joi.number().integer(),
@@ -39,7 +39,7 @@ const produceSchema = Joi.object({
 
 /** GET /work-orders — query params */
 const listWoQuerySchema = Joi.object({
-    status:    Joi.string().valid('pending', 'in_progress', 'done', 'cancelled'),
+    status:    Joi.string().valid('pending', 'in_progress', 'done', 'cancelled').allow('', null).optional(),
     mo_id:     Joi.number().integer(),
     page:      Joi.number().integer().min(1).default(1),
     limit:     Joi.number().integer().min(1).max(100).default(20),

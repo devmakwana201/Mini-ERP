@@ -30,7 +30,7 @@ const updateSoSchema = Joi.object({
 
 /** GET /sales-orders — query params */
 const listSoQuerySchema = Joi.object({
-    status:      Joi.string().valid(...SO_STATUS),
+    status:      Joi.string().valid(...SO_STATUS).allow('', null).optional(),
     so_type:     Joi.string().valid(...SO_TYPE),
     customer_id: Joi.number().integer(),
     search:      Joi.string().max(200).allow('', null),

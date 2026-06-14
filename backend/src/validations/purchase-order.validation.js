@@ -29,7 +29,7 @@ const updatePoSchema = Joi.object({
 
 /** GET /purchase-orders — query params */
 const listPoQuerySchema = Joi.object({
-    status:    Joi.string().valid(...PO_STATUS),
+    status:    Joi.string().valid(...PO_STATUS).allow('', null).optional(),
     vendor_id: Joi.number().integer(),
     search:    Joi.string().max(200).allow('', null),
     page:      Joi.number().integer().min(1).default(1),
