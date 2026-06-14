@@ -42,11 +42,13 @@ export default function SoForm() {
 
   useEffect(() => {
     Promise.all([
-      PartnerService.getAll({ limit: 1000, is_customer: true }).then((r) => {
+      PartnerService.getCustomers({ limit: 200 }).then((r) => {
         if (r.success) setCustomers(r.data || []);
+        else toast.current?.show({ severity: "error", summary: "Could not load customers", detail: r.message });
       }),
-      ProductService.getAll({ limit: 1000 }).then((r) => {
+      ProductService.getAll({ limit: 200 }).then((r) => {
         if (r.success) setProducts(r.data || []);
+        else toast.current?.show({ severity: "error", summary: "Could not load products", detail: r.message });
       }),
     ]);
 
