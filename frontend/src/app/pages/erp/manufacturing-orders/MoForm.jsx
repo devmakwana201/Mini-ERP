@@ -36,11 +36,13 @@ export default function MoForm() {
 
   useEffect(() => {
     Promise.all([
-      ProductService.getAll({ limit: 1000 }).then((r) => {
+      ProductService.getAll({ limit: 200 }).then((r) => {
         if (r.success) setProducts(r.data || []);
+        else toast.current?.show({ severity: "error", summary: "Could not load products", detail: r.message });
       }),
-      BomService.getAll({ limit: 1000 }).then((r) => {
+      BomService.getAll({ limit: 200 }).then((r) => {
         if (r.success) setBoms(r.data || []);
+        else toast.current?.show({ severity: "error", summary: "Could not load BOMs", detail: r.message });
       }),
     ]);
 
@@ -71,7 +73,7 @@ export default function MoForm() {
     if (product && product.bom_id) {
       const bomRes = await BomService.getById(product.bom_id);
       if (bomRes.success) {
-        const bomItems = (bomres.data.bom_items || []).map((item) => ({
+        const bomItems = (bomRes.data?.lines || []).map((item) => ({
           ...item,
           qty_required: (item.qty_per_unit || 1) * (form.qty_planned || 1),
         }));

@@ -48,7 +48,7 @@ const listQuerySchema = Joi.object({
     is_active:   Joi.boolean(),
     search:      Joi.string().max(100).allow('', null),
     page:        Joi.number().integer().min(1).default(1),
-    limit:       Joi.number().integer().min(1).max(100).default(20),
+    limit:       Joi.number().integer().min(1).max(500).default(20),
 });
 
 /** POST /partners/:id/products (link product to vendor) */
