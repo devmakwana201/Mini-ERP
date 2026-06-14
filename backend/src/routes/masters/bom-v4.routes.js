@@ -1,21 +1,70 @@
-const express = require("express");
+// routes/masters/bom-v4.routes.js
+// MASTER_PROMPT Section 6 — BOM API
+// RULE-08: exports { path, router }
+
+const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require("../../middlewares/auth.middleware");
-const bomCtrl = require("../../controllers/masters/bom-v4.controller");
+const { authMiddleware } = require('../../middlewares/auth.middleware');
+const { checkPermission } = require('../../middlewares/permission.middleware');
+const { validateBody, validateQuery } = require('../../middlewares/validation.middleware');
+const {
+    createBomSchema,
+    updateBomSchema,
+    listBomQuerySchema,
+    createLineSchema,
+    updateLineSchema,
+} = require('../../validations/bom.validation');
+const bomCtrl = require('../../controllers/masters/bom-v4.controller');
 
 router.use(authMiddleware);
 
-// Specific before /:id
-router.get("/product/:productId", bomCtrl.getByProduct);
-router.get("/", bomCtrl.list);
-router.get("/:id", bomCtrl.getById);
-router.post("/", bomCtrl.create);
-router.put("/:id", bomCtrl.update);
-router.delete("/:id", bomCtrl.softDelete);
+// Specific routes before /:id
+router.get('/product/:productId',
+    checkPermission('bom', 'view'),
+    bomCtrl.getByProduct
+);
 
-// BOM Lines
-router.post("/:id/lines", bomCtrl.addLine);
-router.put("/:id/lines/:lineId", bomCtrl.updateLine);
-router.delete("/:id/lines/:lineId", bomCtrl.removeLine);
+router.get('/',
+    checkPermission('bom', 'view'),
+    validateQuery(listBomQuerySchema),
+    bomCtrl.list
+);
+router.get('/:id',
+    checkPermission('bom', 'view'),
+    bomCtrl.getById
+);
+router.post('/',
+    checkPermission('bom', 'create'),
+    validateBody(createBomSchema),
+    bomCtrl.create
+);
+router.put('/:id',
+    checkPermission('bom', 'update'),
+    validateBody(updateBomSchema),
+    bomCtrl.update
+);
+router.delete('/:id',
+    checkPermission('bom', 'delete'),
+    bomCtrl.softDelete
+);
 
-module.exports = { path: "/bom-v4", router };
+// BOM Lines sub-resource (RULE-03: subtotal is GENERATED — Joi schema never sends it)
+router.post('/:id/lines',
+    checkPermission('bom', 'update'),
+    validateBody(createLineSchema),
+    bomCtrl.addLine
+);
+router.put('/:id/lines/:lineId',
+    checkPermission('bom', 'update'),
+    validateBody(updateLineSchema),
+    bomCtrl.updateLine
+);
+router.delete('/:id/lines/:lineId',
+    checkPermission('bom', 'update'),
+    bomCtrl.removeLine
+);
+
+module.exports = {
+    path: '/bom',
+    router,
+};

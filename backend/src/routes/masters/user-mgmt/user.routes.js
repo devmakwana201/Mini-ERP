@@ -21,20 +21,27 @@ const profilePicUpload = useS3
       });
 
 
-// Get users list - Changed from POST to GET with query validation
+// Get users list
 router.get("/", 
     authMiddleware,
     validateQuery(commonSchemas.pagination),
     user.getUsers
 );
 
-// Get user by ID - Changed from POST to GET (RESTful)
+// IMPORTANT: /profile/me MUST be before /:id
+// Otherwise Express matches "profile" as the :id param
+router.get("/profile/me", 
+    authMiddleware, 
+    user.getUserProfile
+);
+
+// Get user by ID
 router.get("/:id", 
     authMiddleware,
     user.getData
 );
 
-// Create user - POST method is correct
+// Create user
 router.post("/", 
     authMiddleware,
     // profilePicUpload,
@@ -42,7 +49,7 @@ router.post("/",
     user.create
 );
 
-// Update user - Changed from POST to PUT (RESTful)
+// Update user
 router.put("/:id", 
     authMiddleware,
     // profilePicUpload,
@@ -50,16 +57,10 @@ router.put("/:id",
     user.update
 );
 
-// Delete user - Changed from POST to DELETE (RESTful)
+// Delete user (soft delete)
 router.delete("/:id", 
     authMiddleware,
     user.delete
-);
-
-// Get user profile - Changed from POST to GET
-router.get("/profile/me", 
-    authMiddleware, 
-    user.getUserProfile
 );
 
 module.exports = {

@@ -1159,4 +1159,47 @@ VALUES
 (12, 12,  5, 'SG-TEMP-3X2',   950.00,  4, 10.000, TRUE,  TRUE,  5, NULL),
 (13, 12,  6, 'PP-GLASS-3X2',  980.00,  9, 10.000, FALSE, TRUE,  6, NULL);
 
+
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- SUPPORT TABLES (session management)
+-- ============================================================
+
+-- Stores active JWT tokens per user (supports multi-device)
+CREATE TABLE IF NOT EXISTS user_jwt_tokens (
+    token_id   INT UNSIGNED  AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT UNSIGNED  NOT NULL,
+    token      TEXT          NOT NULL,
+    expiry     DATETIME      NOT NULL,
+    created_at TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_jwt_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    INDEX idx_jwt_user   (user_id),
+    INDEX idx_jwt_expiry (expiry)
+) ENGINE=InnoDB;
+
+-- One active token per email; expires after 1 hour
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token_id   INT UNSIGNED  AUTO_INCREMENT PRIMARY KEY,
+    email      VARCHAR(150)  NOT NULL,
+    token      VARCHAR(255)  NOT NULL UNIQUE,
+    expiry     DATETIME      NOT NULL,
+    created_at TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_prt_email  (email),
+    INDEX idx_prt_token  (token),
+    INDEX idx_prt_expiry (expiry)
+) ENGINE=InnoDB;
+
+-- Tracks every login / logout event per user
+CREATE TABLE IF NOT EXISTS login_logs (
+    log_id      INT UNSIGNED  AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT UNSIGNED  NOT NULL,
+    login_at    DATETIME      NOT NULL,
+    logout_at   DATETIME      NULL,
+    ip_address  VARCHAR(45),
+    user_agent  TEXT,
+    CONSTRAINT fk_ll_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    INDEX idx_ll_user  (user_id),
+    INDEX idx_ll_login (login_at)
+) ENGINE=InnoDB;
+

@@ -1,26 +1,37 @@
 const db = require("../config/db");
 const winston = require("../config/winston");
 
+// ─── NOTE ────────────────────────────────────────────────────
+// The tables referenced below (countrymst, statemaster, etc.)
+// are NOT part of the current mini_erp schema.
+// Functions return empty arrays until those tables are added.
+// ────────────────────────────────────────────────────────────
+
+const tableNotFound = (fn, table) => {
+    winston.warn(`common.model.js → ${fn}: table '${table}' does not exist in the current schema. Returning [].`);
+    return [];
+};
+
 module.exports = {
     /**
-    * Get all countries
-    * @returns {Promise<Array>}
-    */
+     * Get all countries
+     * @returns {Promise<Array>}
+     */
     getCountry: async () => {
         try {
             const rows = await db.getResults(
-                `SELECT countryid as id, countryname as name FROM countrymst 
-                    WHERE isdeleted = 0`
+                `SELECT countryid as id, countryname as name FROM countrymst WHERE isdeleted = 0`
             );
             return rows;
         } catch (error) {
+            if (error.code === "ER_NO_SUCH_TABLE") return tableNotFound("getCountry", "countrymst");
             winston.error(`Error fetching countries: ${error.message}`, {
                 source: "common.model.js",
                 function: "getCountry",
                 error: error.message,
                 code: error.code,
                 errno: error.errno,
-                stack: error.stack
+                stack: error.stack,
             });
             throw error;
         }
@@ -32,8 +43,7 @@ module.exports = {
      */
     getState: async (id = null) => {
         try {
-            let sql = `SELECT stateid as id, statename as name FROM statemaster 
-                        WHERE isdeleted = 0`;
+            let sql = `SELECT stateid as id, statename as name FROM statemaster WHERE isdeleted = 0`;
             const params = [];
             if (id) {
                 sql += ` AND countryid = ?`;
@@ -42,6 +52,7 @@ module.exports = {
             const rows = await db.getResults(sql, params);
             return rows;
         } catch (error) {
+            if (error.code === "ER_NO_SUCH_TABLE") return tableNotFound("getState", "statemaster");
             winston.error(`Error fetching states: ${error.message}`, {
                 source: "common.model.js",
                 function: "getState",
@@ -49,7 +60,7 @@ module.exports = {
                 code: error.code,
                 errno: error.errno,
                 stack: error.stack,
-                countryId: id
+                countryId: id,
             });
             throw error;
         }
@@ -61,8 +72,7 @@ module.exports = {
      */
     getCity: async (id = null) => {
         try {
-            let sql = `SELECT cityid as id, cityname as name FROM citymaster 
-                            WHERE isdeleted = 0`;
+            let sql = `SELECT cityid as id, cityname as name FROM citymaster WHERE isdeleted = 0`;
             const params = [];
             if (id) {
                 sql += ` AND stateid = ?`;
@@ -71,6 +81,7 @@ module.exports = {
             const rows = await db.getResults(sql, params);
             return rows;
         } catch (error) {
+            if (error.code === "ER_NO_SUCH_TABLE") return tableNotFound("getCity", "citymaster");
             winston.error(`Error fetching cities: ${error.message}`, {
                 source: "common.model.js",
                 function: "getCity",
@@ -78,7 +89,7 @@ module.exports = {
                 code: error.code,
                 errno: error.errno,
                 stack: error.stack,
-                stateId: id
+                stateId: id,
             });
             throw error;
         }
@@ -91,31 +102,30 @@ module.exports = {
     getLocation: async () => {
         try {
             const rows = await db.getResults(
-                `SELECT locationid as id, locationname as name FROM locationmaster 
-                                WHERE isdeleted = 0`
+                `SELECT locationid as id, locationname as name FROM locationmaster WHERE isdeleted = 0`
             );
             return rows;
         } catch (error) {
+            if (error.code === "ER_NO_SUCH_TABLE") return tableNotFound("getLocation", "locationmaster");
             winston.error(`Error fetching locations: ${error.message}`, {
                 source: "common.model.js",
                 function: "getLocation",
                 error: error.message,
                 code: error.code,
                 errno: error.errno,
-                stack: error.stack
+                stack: error.stack,
             });
             throw error;
         }
     },
 
     /**
-     * Get all cities
+     * Get all tax profiles
      * @returns {Promise<Array>}
      */
     getTaxProfile: async (id = null) => {
         try {
-            let sql = `SELECT taxprofileid as id, taxprofilename as name FROM taxprofilemaster 
-                                    WHERE isdeleted = 0`;
+            let sql = `SELECT taxprofileid as id, taxprofilename as name FROM taxprofilemaster WHERE isdeleted = 0`;
             const params = [];
             if (id) {
                 sql += ` AND stateid = ?`;
@@ -124,6 +134,7 @@ module.exports = {
             const rows = await db.getResults(sql, params);
             return rows;
         } catch (error) {
+            if (error.code === "ER_NO_SUCH_TABLE") return tableNotFound("getTaxProfile", "taxprofilemaster");
             winston.error(`Error fetching taxprofiles: ${error.message}`, {
                 source: "common.model.js",
                 function: "getTaxProfile",
@@ -131,9 +142,9 @@ module.exports = {
                 code: error.code,
                 errno: error.errno,
                 stack: error.stack,
-                stateId: id
+                stateId: id,
             });
             throw error;
         }
-    }
-}
+    },
+};

@@ -186,11 +186,35 @@ app.get("/health/ready", async (req, res) => {
     }
 });
 
-app.get("/health/live", (req, res) => {
+app.get('/health/live', (req, res) => {
     res.json({
-        status: "alive",
+        status: 'alive',
         timestamp: new Date().toISOString(),
     });
+});
+
+// Master-Prompt compliant health endpoint (Phase 0, Section 14)
+app.get('/api/v1/health', async (req, res) => {
+    try {
+        const db = require('./config/db');
+        await db.connection.query('SELECT 1');
+        res.json({
+            success: true,
+            status: 'ok',
+            db: 'connected',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            environment: serverConfig.environment,
+        });
+    } catch (error) {
+        res.status(503).json({
+            success: false,
+            status: 'error',
+            db: 'disconnected',
+            timestamp: new Date().toISOString(),
+            message: error.message,
+        });
+    }
 });
 
 // Metrics endpoint
@@ -310,32 +334,9 @@ process.on("unhandledRejection", async (reason, promise) => {
     }
 });
 
-// Express error handler middleware
-app.use(async function (err, req, res, next) {
-    winston.error(`Express error: ${err.message}`, {
-        source: "server.js",
-        function: "expressErrorHandler",
-        error: err.message,
-        code: err.code,
-        errno: err.errno,
-        stack: err.stack,
-        method: req.method,
-        path: req.path,
-        statusCode: err.statusCode || err.status || 500
-    });
-
-    const isDevelopment = serverConfig.isDevelopment;
-    const status = err.statusCode || err.status || 500;
-
-    res.status(status).json({
-        success: 0,
-        error: {
-            message: err.message || "Internal Server Error",
-            status: status,
-            ...(isDevelopment && { stack: err.stack }),
-        },
-    });
-});
+// Master-Prompt compliant global error handler (RULE-09)
+// MUST be mounted AFTER all routes and BEFORE 404 handler
+app.use(require('./middlewares/error.middleware'));
 
 // 404 handler
 app.use(function (req, res, next) {

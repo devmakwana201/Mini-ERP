@@ -49,8 +49,50 @@ setInterval(() => {
 // Helper to get current transaction connection from AsyncLocalStorage
 const getTransactionConnection = () => asyncLocalStorage.getStore()?.connection || null;
 
+// ─── Master-Prompt API (Section 5.3) ────────────────────────────────────────
+// These are the canonical methods all NEW code should use.
+// Legacy helpers (getResults, insert, update, etc.) remain for compat.
+
+/**
+ * ALS-aware query helper.
+ * Inside a withTransaction callback → uses the transaction connection.
+ * Outside → falls back to the pool.
+ */
+async function query(sql, params) {
+    const conn = asyncLocalStorage.getStore();
+    if (conn) return conn.query(sql, params);
+    return pool.query(sql, params);
+}
+
+/**
+ * Run fn inside a MySQL transaction.
+ * Commits on success, rolls back on any error, always releases connection.
+ * All db.query() calls inside fn automatically use the transaction connection.
+ *
+ * @param {Function} fn  — async function containing all DB operations
+ * @returns {Promise<*>} — whatever fn returns
+ */
+async function withTransaction(fn) {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+    try {
+        const result = await asyncLocalStorage.run(conn, fn);
+        await conn.commit();
+        return result;
+    } catch (err) {
+        await conn.rollback();
+        throw err;
+    } finally {
+        conn.release();
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 module.exports = {
     connection: pool,
+    // Master-prompt canonical API
+    query,
+    withTransaction,
 
     getMaxDate: function (data) {
         return moment(

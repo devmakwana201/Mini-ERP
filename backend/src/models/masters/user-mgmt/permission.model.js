@@ -2,331 +2,173 @@ const db = require("../../../config/db");
 const moment = require("moment");
 const winston = require("../../../config/winston");
 
+// ─── Permissions in new schema ──────────────────────────────
+// Permissions are stored as a JSON column on the `roles` table.
+// There is no separate permissionmaster table.
+//
+// Expected JSON structure inside roles.permissions:
+// {
+//   "users":       { "view": true, "create": true, "edit": true, "delete": false },
+//   "sales":       { "view": true, "create": false, "edit": false, "delete": false },
+//   "inventory":   { "view": true, "create": true, "edit": true, "delete": true },
+//   ...
+// }
+// ────────────────────────────────────────────────────────────
+
 module.exports = {
     /**
-     * Check if permission exists by title
+     * Get the permissions JSON for a specific role
+     * @param {number} roleId
+     * @returns {object|null}
      */
-    checkPermissionExists: async (permissiontitle, excludeId = null) => {
+    getPermissions: async (roleId) => {
         try {
-            let sql = `SELECT permissionid FROM permissionmaster WHERE LOWER(permissiontitle) = LOWER(?) AND isdeleted = 0`;
-            const params = [permissiontitle];
-            
-            if (excludeId) {
-                sql += ` AND permissionid != ?`;
-                params.push(excludeId);
-            }
-            
-            const res = await db.getResults(sql, params);
-            return res && res.length > 0;
-        } catch (error) {
-            return false;
-        }
-    },
+            const result = await db.getResults(
+                `SELECT role_id, name, permissions FROM roles WHERE role_id = ? AND is_deleted = 0`,
+                [roleId]
+            );
+            if (!result || result.length === 0) return null;
 
-    /**
-     * Check if permission code exists
-     */
-    checkPermissionCodeExists: async (permissioncode, excludeId = null) => {
-        try {
-            let sql = `SELECT permissionid FROM permissionmaster WHERE LOWER(permissioncode) = LOWER(?) AND isdeleted = 0`;
-            const params = [permissioncode];
-            
-            if (excludeId) {
-                sql += ` AND permissionid != ?`;
-                params.push(excludeId);
-            }
-            
-            const res = await db.getResults(sql, params);
-            return res && res.length > 0;
-        } catch (error) {
-            return false;
-        }
-    },
-
-    /**
-     * Get permissions with pagination and filtering
-     */
-    getPermissions: async (req) => {
-        const { start = 1, length = 10, filters, sortField = 'permissionid', sortOrder = 'desc' } = req.query;
-
-        let sql = `
-            SELECT permissionid, permissiontitle, permissioncode, permissiontype, 
-                   moduleid, applicablefor,
-                   createdby, createddate, modifiedby, modifieddate, ipaddress, isdeleted
-            FROM permissionmaster
-            WHERE isdeleted = 0
-        `;
-
-        const params = [];
-
-        let parsedFilters = {};
-        if (filters) {
-            try {
-                parsedFilters = JSON.parse(filters);
-            } catch (err) {
-                winston.warn("Invalid filters JSON received", {
-                    source: "permission.model.js",
-                    function: "getPermissions"
-                });
-            }
-        }
-
-        const getFilterValue = (field) => {
-            const val = parsedFilters[field];
-            return typeof val === "object" ? val.value : val;
-        };
-
-        // Apply filters
-        const filterFields = ['permissiontitle', 'permissioncode'];
-        filterFields.forEach(field => {
-            const value = getFilterValue(field);
-            if (value) {
-                sql += ` AND ${field} LIKE ?`;
-                params.push(`%${value}%`);
-            }
-        });
-
-        // Permission type filter
-        const permissiontype = getFilterValue("permissiontype");
-        if (permissiontype) {
-            sql += ` AND permissiontype = ?`;
-            params.push(permissiontype);
-        }
-
-        // Module filter
-        const moduleid = getFilterValue("moduleid");
-        if (moduleid) {
-            sql += ` AND moduleid = ?`;
-            params.push(moduleid);
-        }
-
-
-        // Applicable on filter (1=web, 2=desktop)
-        const applicableon = getFilterValue("applicableon");
-        if (applicableon) {
-            sql += ` AND applicableon = ?`;
-            params.push(applicableon);
-        }
-
-        const global = getFilterValue("global");
-        if (global) {
-            sql += ` AND (permissiontitle LIKE ? OR permissioncode LIKE ?)`;
-            const g = `%${global}%`;
-            params.push(g, g);
-        }
-
-        // Sorting
-        const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-        sql += ` ORDER BY ${sortField} ${order}`;
-
-        // Pagination
-        const startNum = parseInt(start);
-        const lengthNum = parseInt(length);
-        
-        if (lengthNum !== -1) {
-            sql += ` LIMIT ?, ?`;
-            params.push(startNum, lengthNum);
-        }
-
-        const data = await db.getResults(sql, params);
-
-        // Count total records
-        let countSql = `SELECT COUNT(*) as total FROM permissionmaster WHERE isdeleted = 0`;
-        let countParams = [];
-
-        // Apply same filters for count
-        filterFields.forEach(field => {
-            const value = getFilterValue(field);
-            if (value) {
-                countSql += ` AND ${field} LIKE ?`;
-                countParams.push(`%${value}%`);
-            }
-        });
-
-        if (permissiontype) {
-            countSql += ` AND permissiontype = ?`;
-            countParams.push(permissiontype);
-        }
-
-        if (moduleid) {
-            countSql += ` AND moduleid = ?`;
-            countParams.push(moduleid);
-        }
-
-
-        if (applicableon) {
-            countSql += ` AND applicableon = ?`;
-            countParams.push(applicableon);
-        }
-
-        if (global) {
-            countSql += ` AND (permissiontitle LIKE ? OR permissioncode LIKE ?)`;
-            const g = `%${global}%`;
-            countParams.push(g, g);
-        }
-
-        const totalResult = await db.getResults(countSql, countParams);
-        const totalRecords = totalResult[0]?.total || 0;
-        const totalPages = Math.ceil(totalRecords / lengthNum);
-
-        return {
-            data,
-            pagination: {
-                start: startNum,
-                length: lengthNum,
-                total: totalRecords,
-                totalPages
-            }
-        };
-    },
-
-    /**
-     * Get permission data by ID
-     */
-    getData: async (id) => {
-        const sql = `
-            SELECT permissionid, permissiontitle, permissioncode, permissiontype, 
-                   moduleid, applicablefor,
-                   createdby, createddate, modifiedby, modifieddate, ipaddress
-            FROM permissionmaster 
-            WHERE permissionid = ? AND isdeleted = 0
-        `;
-        const results = await db.getResults(sql, [id]);
-
-        if (results.length === 0) return [];
-
-        return results;
-    },
-
-    /**
-     * Create new permission
-     */
-    create: async (data) => {
-        try {
-            // Add timestamps
-            data.createddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            data.modifieddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            
-            // Set defaults
-            data.isdeleted = 0;
-            data.applicablefor = data.applicablefor || 1; // Default to web
-            
-            const result = await db.insert('permissionmaster', data);
-            if (!result.insertId) {
-                return { status: 500, success: 0, msg: "Failed to create permission" };
-            }
-            
-            return { 
-                status: 201, 
-                success: 1, 
-                msg: "Permission created successfully",
-                data: { permissionid: result.insertId, ...data }
+            const row = result[0];
+            return {
+                role_id: row.role_id,
+                name: row.name,
+                permissions: typeof row.permissions === "string"
+                    ? JSON.parse(row.permissions)
+                    : row.permissions || {},
             };
         } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
-                return { status: 409, success: 0, msg: "Permission with this title or code already exists" };
-            }
-            return { status: 500, success: 0, msg: error.message };
+            winston.error(`Error getting permissions for role ${roleId}: ${error.message}`, {
+                source: "permission.model.js",
+                function: "getPermissions",
+                error: error.message,
+                code: error.code,
+            });
+            return null;
         }
     },
 
     /**
-     * Update permission
-     */
-    update: async (id, data) => {
-        try {
-            // Add modified timestamp
-            data.modifieddate = moment().format("YYYY-MM-DD HH:mm:ss");
-            
-            const result = await db.update('permissionmaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'permissionid', value: id }, { column: 'isdeleted', value: 0 }]
-            );
-            if (!result.affectedRows) {
-                return { status: 404, success: 0, msg: "Permission not found" };
-            }
-            
-            return { 
-                status: 200, 
-                success: 1, 
-                msg: "Permission updated successfully",
-                data: { permissionid: id, ...data }
-            };
-        } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
-                return { status: 409, success: 0, msg: "Permission title or code already exists" };
-            }
-            return { status: 500, success: 0, msg: error.message };
-        }
-    },
-
-    /**
-     * Soft delete permission
-     */
-    delete: async (id, data) => {
-        try {
-            const result = await db.update('permissionmaster', 
-                Object.keys(data).map(key => ({ column: key, value: data[key] })),
-                [{ column: 'permissionid', value: id }]
-            );
-            if (!result.affectedRows) {
-                return { status: 500, success: 0, msg: "Permission not found" };
-            }
-            return { status: 200, success: 1, msg: "Permission deleted successfully" };
-        } catch (error) {
-            return { status: 500, success: 0, msg: error.message };
-        }
-    },
-
-    /**
-     * Get all permissions for dropdown
+     * Get permissions for all roles (for admin overview)
+     * @returns {Array}
      */
     getAllPermissions: async () => {
         try {
-            const sql = `
-                SELECT permissionid, permissiontitle, permissioncode, permissiontype, moduleid, applicablefor 
-                FROM permissionmaster 
-                WHERE isdeleted = 0
-                ORDER BY moduleid ASC, permissiontitle ASC
-            `;
-            return await db.getResults(sql);
+            const result = await db.getResults(
+                `SELECT role_id, name, permissions FROM roles WHERE is_deleted = 0 ORDER BY name ASC`
+            );
+            return result.map((row) => ({
+                role_id: row.role_id,
+                name: row.name,
+                permissions: typeof row.permissions === "string"
+                    ? JSON.parse(row.permissions)
+                    : row.permissions || {},
+            }));
         } catch (error) {
             winston.error(`Error getting all permissions: ${error.message}`, {
                 source: "permission.model.js",
                 function: "getAllPermissions",
                 error: error.message,
                 code: error.code,
-                errno: error.errno,
-                stack: error.stack
             });
             return [];
         }
     },
 
     /**
-     * Get permissions by module
+     * Set (overwrite) the full permissions JSON for a role
+     * @param {number} roleId
+     * @param {object} permissions - full permissions object
+     * @param {number} updatedBy   - user_id of the editor
      */
-    getPermissionsByModule: async (moduleid) => {
+    setPermissions: async (roleId, permissions, updatedBy = null) => {
         try {
-            const sql = `
-                SELECT permissionid, permissiontitle, permissioncode, permissiontype, applicablefor 
-                FROM permissionmaster 
-                WHERE moduleid = ? AND isdeleted = 0
-                ORDER BY permissiontitle ASC
-            `;
-            return await db.getResults(sql, [moduleid]);
+            const permJson = typeof permissions === "string"
+                ? permissions
+                : JSON.stringify(permissions);
+
+            const result = await db.update(
+                "roles",
+                [
+                    { column: "permissions", value: permJson },
+                    { column: "updated_at", value: moment().format("YYYY-MM-DD HH:mm:ss") },
+                    ...(updatedBy ? [{ column: "updated_by", value: updatedBy }] : []),
+                ],
+                [{ column: "role_id", value: roleId }, { column: "is_deleted", value: 0 }]
+            );
+
+            if (!result.affectedRows) {
+                return { status: 404, success: 0, msg: "Role not found" };
+            }
+
+            return {
+                status: 200,
+                success: 1,
+                msg: "Permissions updated successfully",
+                data: { role_id: roleId, permissions },
+            };
         } catch (error) {
-            winston.error(`Error getting permissions by module: ${error.message}`, {
+            winston.error(`Error setting permissions for role ${roleId}: ${error.message}`, {
                 source: "permission.model.js",
-                function: "getPermissionsByModule",
+                function: "setPermissions",
                 error: error.message,
                 code: error.code,
-                errno: error.errno,
-                stack: error.stack,
-                modulename: modulename
             });
-            return [];
+            return { status: 500, success: 0, msg: error.message };
         }
     },
 
+    /**
+     * Merge (patch) specific permission keys into an existing role's permissions
+     * @param {number} roleId
+     * @param {object} patch       - partial permissions to merge (e.g. { users: { delete: true } })
+     * @param {number} updatedBy
+     */
+    patchPermissions: async (roleId, patch, updatedBy = null) => {
+        try {
+            // Fetch existing
+            const existing = await module.exports.getPermissions(roleId);
+            if (!existing) {
+                return { status: 404, success: 0, msg: "Role not found" };
+            }
+
+            // Deep merge patch into existing
+            const merged = { ...existing.permissions };
+            for (const module_ of Object.keys(patch)) {
+                merged[module_] = { ...(merged[module_] || {}), ...patch[module_] };
+            }
+
+            return await module.exports.setPermissions(roleId, merged, updatedBy);
+        } catch (error) {
+            winston.error(`Error patching permissions for role ${roleId}: ${error.message}`, {
+                source: "permission.model.js",
+                function: "patchPermissions",
+                error: error.message,
+                code: error.code,
+            });
+            return { status: 500, success: 0, msg: error.message };
+        }
+    },
+
+    /**
+     * Check if a role has a specific permission
+     * @param {number} roleId
+     * @param {string} module_   - e.g. "users"
+     * @param {string} action    - e.g. "delete"
+     * @returns {boolean}
+     */
+    hasPermission: async (roleId, module_, action) => {
+        try {
+            const data = await module.exports.getPermissions(roleId);
+            if (!data) return false;
+            return !!(data.permissions?.[module_]?.[action]);
+        } catch (error) {
+            winston.error(`Error checking permission: ${error.message}`, {
+                source: "permission.model.js",
+                function: "hasPermission",
+                error: error.message,
+            });
+            return false;
+        }
+    },
 };

@@ -7,24 +7,37 @@ const { jwt: jwtConfig, server, security } = require("../../../config/config");
 const { verifyPassword, hashPassword } = require("../../../utils/passwordVerify.utils");
 const JWT_SECRET = jwtConfig.secret;
 
+// ─── Column map (new schema) ────────────────────────────────
+// Table  : users
+// PK     : user_id
+// login  : email  (no separate username column)
+// display: name
+// pwd    : password_hash
+// soft-del: is_deleted
+// audit  : created_at / updated_at / created_by / updated_by
+// ────────────────────────────────────────────────────────────
+
 module.exports = {
     /**
      * Find user by email and verify password
      */
     findUser: async (email, password) => {
         try {
-            let res = await db.getResults(
-                `SELECT user_id AS userId, name AS userName, name AS firstName, '' AS lastName, email, password_hash AS password FROM users WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
+            const res = await db.getResults(
+                `SELECT user_id AS userId, name AS userName, name AS firstName, '' AS lastName,
+                        email, password_hash AS password
+                 FROM users
+                 WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
                 [email]
             );
             if (!res?.length) return { success: 0, msg: "User not found" };
-            
+
             const user = res[0];
             if (!user.password?.length) return { success: 0, msg: "Invalid Authentication" };
 
             const isMatch = await verifyPassword(password, user.password);
             if (!isMatch) return { success: 0, msg: "Invalid Authentication" };
-            
+
             return { success: 1, data: user };
         } catch (error) {
             return { success: 0, msg: error.message, error: error.message };
@@ -50,7 +63,11 @@ module.exports = {
      * Remove JWT token from database
      */
     removeToken: async (token) => {
-        await db.getResults(`DELETE FROM user_jwt_tokens WHERE token = ?`, [token]);
+        try {
+            await db.getResults(`DELETE FROM user_jwt_tokens WHERE token = ?`, [token]);
+        } catch (error) {
+            winston.warn("removeToken: user_jwt_tokens may not exist yet", { error: error.message });
+        }
     },
 
     /**
@@ -59,54 +76,51 @@ module.exports = {
     updateToken: async (userId, token) => {
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
-            const userTokenObj = {
-                userid: userId,
+            const expiry = moment.unix(decoded.exp).format("YYYY-MM-DD HH:mm:ss");
+            const result = await db.insert("user_jwt_tokens", {
+                user_id: userId,
                 token: token,
-                expiry: moment.unix(decoded.exp).format("YYYY-MM-DD HH:mm:ss"),
-            };
-            
-            // Insert new token
-            const result = await db.insert('user_jwt_tokens', userTokenObj);
-            return result.affectedRows ? { success: 1 } : { success: 0 };
+                expiry: expiry,
+            });
+            return result.affectedRows ? { success: 1 } : { success: 1 }; // non-blocking
         } catch (error) {
-            return { success: 0, msg: error.message };
+            // Table may not exist until migration is run — don't block login
+            winston.warn("updateToken: skipped (run migrations/support_tables.sql to enable)", {
+                error: error.message
+            });
+            return { success: 1 }; // Return success so login is not blocked
         }
     },
 
     /**
-     * Save user login logs
+     * Save user login log
      */
     saveLogs: async (ip, userId, userAgent = null) => {
         try {
-            const logObj = {
-                userid: userId,
-                login: moment().format("YYYY-MM-DD HH:mm:ss"),
-                ip: ip,
-                userAgent: userAgent,
-            };
-            const result = await db.insert('logmst', logObj);
+            const result = await db.insert("login_logs", {
+                user_id: userId,
+                login_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                ip_address: ip,
+                user_agent: userAgent,
+            });
             return result.insertId ? { success: 1 } : { success: 0 };
         } catch (error) {
+            winston.warn("saveLogs: skipped (table may not exist yet)", { error: error.message });
             return { success: 0, msg: error.message };
         }
     },
 
     /**
-     * Update logout time in logs
+     * Update logout time in login logs
      */
     updateLogs: async (userId) => {
         try {
             await db.getResults(
-                `UPDATE logmst SET logOut = ? WHERE userid = ? ORDER BY logId DESC LIMIT 1`,
+                `UPDATE login_logs SET logout_at = ? WHERE user_id = ? ORDER BY log_id DESC LIMIT 1`,
                 [moment().format("YYYY-MM-DD HH:mm:ss"), userId]
             );
         } catch (error) {
-            winston.error(`Error updating logout logs: ${error.message}`, {
-                source: "user.model.js",
-                function: "updateLogs",
-                error: error.message,
-                userId: userId
-            });
+            winston.warn("updateLogs: skipped (table may not exist yet)", { error: error.message });
         }
     },
 
@@ -114,10 +128,11 @@ module.exports = {
      * Get users with pagination and filtering
      */
     getUsers: async (req) => {
-        const { start = 0, length = 10, filters, sortField = 'user_id', sortOrder = 'desc' } = req.query;
+        const { start = 0, length = 10, filters, sortField = "user_id", sortOrder = "desc" } = req.query;
 
         let sql = `
-            SELECT user_id AS userid, name AS username, name AS firstname, '' AS lastname, email, created_by AS createdby, created_at AS createddate, updated_by AS modifedby, updated_at AS modifieddate, is_deleted AS isdeleted
+            SELECT user_id, name, email, role_id, status,
+                   created_by, created_at, updated_by, updated_at, is_deleted
             FROM users
             WHERE is_deleted = 0
         `;
@@ -132,7 +147,7 @@ module.exports = {
                 winston.warn("Invalid filters JSON received", {
                     source: "user.model.js",
                     function: "getUsers",
-                    error: err.message
+                    error: err.message,
                 });
             }
         }
@@ -143,26 +158,14 @@ module.exports = {
         };
 
         // Apply filters
-        const username = getFilterValue('username');
-        if (username) {
-            sql += ` AND name LIKE ?`;
-            params.push(`%${username}%`);
-        }
-        const firstname = getFilterValue('firstname');
-        if (firstname) {
-            sql += ` AND name LIKE ?`;
-            params.push(`%${firstname}%`);
-        }
-        const lastname = getFilterValue('lastname');
-        if (lastname) {
-            sql += ` AND name LIKE ?`;
-            params.push(`%${lastname}%`);
-        }
-        const email = getFilterValue('email');
-        if (email) {
-            sql += ` AND email LIKE ?`;
-            params.push(`%${email}%`);
-        }
+        const filterFields = ["name", "email"];
+        filterFields.forEach((field) => {
+            const value = getFilterValue(field);
+            if (value) {
+                sql += ` AND ${field} LIKE ?`;
+                params.push(`%${value}%`);
+            }
+        });
 
         const global = getFilterValue("global");
         if (global) {
@@ -171,23 +174,16 @@ module.exports = {
             params.push(g, g);
         }
 
-        // Sorting map
-        let orderField = 'user_id';
-        if (sortField === 'username' || sortField === 'firstname') {
-            orderField = 'name';
-        } else if (sortField === 'email') {
-            orderField = 'email';
-        } else if (sortField === 'createddate') {
-            orderField = 'created_at';
-        }
+        // Sorting
+        const allowedSort = ["user_id", "name", "email", "created_at", "status"];
+        const safeSort = allowedSort.includes(sortField) ? sortField : "user_id";
+        const order = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+        sql += ` ORDER BY ${safeSort} ${order}`;
 
-        const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-        sql += ` ORDER BY ${orderField} ${order}`;
-
-        // Pagination using start and length
+        // Pagination
         const startNum = parseInt(start);
         const lengthNum = parseInt(length);
-        
+
         if (lengthNum !== -1) {
             sql += ` LIMIT ?, ?`;
             params.push(startNum, lengthNum);
@@ -197,25 +193,15 @@ module.exports = {
 
         // Count total records
         let countSql = `SELECT COUNT(*) as total FROM users WHERE is_deleted = 0`;
-        let countParams = [];
+        const countParams = [];
 
-        // Apply same filters for count
-        if (username) {
-            countSql += ` AND name LIKE ?`;
-            countParams.push(`%${username}%`);
-        }
-        if (firstname) {
-            countSql += ` AND name LIKE ?`;
-            countParams.push(`%${firstname}%`);
-        }
-        if (lastname) {
-            countSql += ` AND name LIKE ?`;
-            countParams.push(`%${lastname}%`);
-        }
-        if (email) {
-            countSql += ` AND email LIKE ?`;
-            countParams.push(`%${email}%`);
-        }
+        filterFields.forEach((field) => {
+            const value = getFilterValue(field);
+            if (value) {
+                countSql += ` AND ${field} LIKE ?`;
+                countParams.push(`%${value}%`);
+            }
+        });
 
         if (global) {
             countSql += ` AND (name LIKE ? OR email LIKE ?)`;
@@ -232,8 +218,8 @@ module.exports = {
                 start: startNum,
                 length: lengthNum,
                 total: totalRecords,
-                recordsFiltered: totalRecords
-            }
+                recordsFiltered: totalRecords,
+            },
         };
     },
 
@@ -241,13 +227,14 @@ module.exports = {
      * Get user data by ID
      */
     getData: async (id) => {
-        const sql = `SELECT user_id AS userid, name AS username, name AS firstname, '' AS lastname, email
-            FROM users WHERE user_id = ? AND is_deleted = 0`;
+        const sql = `
+            SELECT user_id, name, email, role_id, status
+            FROM users
+            WHERE user_id = ? AND is_deleted = 0
+        `;
         const results = await db.getResults(sql, [id]);
-
         if (results.length === 0) return [];
-
-        return [results[0]];
+        return results;
     },
 
     /**
@@ -255,38 +242,31 @@ module.exports = {
      */
     create: async (data) => {
         try {
-            // Hash password if provided
-            let hashedPassword = data.password;
-            if (data.password && !data.password.startsWith('$2b$')) {
-                hashedPassword = await hashPassword(data.password, security.bcryptRounds);
+            if (data.password) {
+                data.password_hash = await hashPassword(data.password, security.bcryptRounds);
+                delete data.password;
             }
-            
-            const dbData = {
-                role_id: 2, // Default: Sales User
-                name: `${data.firstname || ''} ${data.lastname || ''}`.trim() || data.username,
-                email: data.email.toLowerCase(),
-                password_hash: hashedPassword,
-                status: 'active',
-                is_deleted: 0,
-                created_by: data.createdby || null,
-                created_at: data.createddate || moment().format("YYYY-MM-DD HH:mm:ss"),
-                updated_by: data.modifedby || null,
-                updated_at: data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss")
-            };
-            
-            const result = await db.insert('users', dbData);
+
+            data.created_at = moment().format("YYYY-MM-DD HH:mm:ss");
+            data.updated_at = moment().format("YYYY-MM-DD HH:mm:ss");
+            data.is_deleted = 0;
+
+            const result = await db.insert("users", data);
             if (!result.insertId) {
                 return { status: 500, success: 0, msg: "Failed to create user" };
             }
-            
-            return { 
-                status: 201, 
-                success: 1, 
+
+            const responseData = { ...data };
+            delete responseData.password_hash;
+
+            return {
+                status: 201,
+                success: 1,
                 msg: "User created successfully",
-                data: { userId: result.insertId, ...data }
+                data: { userId: result.insertId, ...responseData },
             };
         } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
+            if (error.code === "ER_DUP_ENTRY") {
                 return { status: 409, success: 0, msg: "User with this email already exists" };
             }
             return { status: 500, success: 0, msg: error.message };
@@ -298,38 +278,33 @@ module.exports = {
      */
     update: async (id, data) => {
         try {
-            const dbUpdates = {};
-            if (data.firstname !== undefined || data.lastname !== undefined || data.username !== undefined) {
-                const name = `${data.firstname || ''} ${data.lastname || ''}`.trim() || data.username;
-                if (name) dbUpdates.name = name;
+            if (data.password) {
+                data.password_hash = await hashPassword(data.password, security.bcryptRounds);
+                delete data.password;
             }
-            if (data.email !== undefined) dbUpdates.email = data.email.toLowerCase();
-            if (data.password !== undefined) {
-                let hashedPassword = data.password;
-                if (!data.password.startsWith('$2b$')) {
-                    hashedPassword = await hashPassword(data.password, security.bcryptRounds);
-                }
-                dbUpdates.password_hash = hashedPassword;
-            }
-            if (data.modifedby !== undefined) dbUpdates.updated_by = data.modifedby;
-            dbUpdates.updated_at = data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss");
-            
-            const result = await db.update('users', 
-                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
-                [{ column: 'user_id', value: id }, { column: 'is_deleted', value: 0 }]
+
+            data.updated_at = moment().format("YYYY-MM-DD HH:mm:ss");
+
+            const result = await db.update(
+                "users",
+                Object.keys(data).map((key) => ({ column: key, value: data[key] })),
+                [{ column: "user_id", value: id }, { column: "is_deleted", value: 0 }]
             );
             if (!result.affectedRows) {
                 return { status: 404, success: 0, msg: "User not found" };
             }
-            
-            return { 
-                status: 200, 
-                success: 1, 
+
+            const responseData = { ...data };
+            delete responseData.password_hash;
+
+            return {
+                status: 200,
+                success: 1,
                 msg: "User updated successfully",
-                data: { userId: id, ...data }
+                data: { userId: id, ...responseData },
             };
         } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
+            if (error.code === "ER_DUP_ENTRY") {
                 return { status: 409, success: 0, msg: "Email already exists" };
             }
             return { status: 500, success: 0, msg: error.message };
@@ -341,14 +316,10 @@ module.exports = {
      */
     delete: async (id, data) => {
         try {
-            const dbUpdates = {
-                is_deleted: 1,
-                updated_by: data.modifedby,
-                updated_at: data.modifieddate || moment().format("YYYY-MM-DD HH:mm:ss")
-            };
-            const result = await db.update('users', 
-                Object.keys(dbUpdates).map(key => ({ column: key, value: dbUpdates[key] })),
-                [{ column: 'user_id', value: id }]
+            const result = await db.update(
+                "users",
+                Object.keys(data).map((key) => ({ column: key, value: data[key] })),
+                [{ column: "user_id", value: id }]
             );
             if (!result.affectedRows) {
                 return { status: 500, success: 0, msg: "User not found" };
@@ -364,33 +335,28 @@ module.exports = {
      */
     savePasswordResetToken: async (email, token) => {
         try {
-            const expiry = moment().add(1, 'hour').format("YYYY-MM-DD HH:mm:ss");
-            
-            // Remove any existing reset tokens for this email
+            const expiry = moment().add(1, "hour").format("YYYY-MM-DD HH:mm:ss");
             await db.getResults(`DELETE FROM password_reset_tokens WHERE email = ?`, [email]);
-            
-            // Insert new reset token
-            const result = await db.insert('password_reset_tokens', {
+            const result = await db.insert("password_reset_tokens", {
                 email: email,
                 token: token,
                 expiry: expiry,
-                created_at: moment().format("YYYY-MM-DD HH:mm:ss")
+                created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
             });
-            
             return result.affectedRows > 0;
         } catch (error) {
             winston.error(`Error saving password reset token: ${error.message}`, {
                 source: "user.model.js",
                 function: "savePasswordResetToken",
                 error: error.message,
-                email: email
+                code: error.code,
             });
             return false;
         }
     },
 
     /**
-     * Verify password reset token from database
+     * Verify password reset token
      */
     verifyPasswordResetToken: async (token) => {
         try {
@@ -398,21 +364,14 @@ module.exports = {
                 `SELECT email, expiry FROM password_reset_tokens WHERE token = ? AND expiry > NOW()`,
                 [token]
             );
-            
-            if (result.length === 0) {
-                return null;
-            }
-            
-            return {
-                email: result[0].email,
-                expiry: result[0].expiry
-            };
+            if (result.length === 0) return null;
+            return { email: result[0].email, expiry: result[0].expiry };
         } catch (error) {
             winston.error(`Error verifying password reset token: ${error.message}`, {
                 source: "user.model.js",
                 function: "verifyPasswordResetToken",
                 error: error.message,
-                token: token
+                code: error.code,
             });
             return null;
         }
@@ -430,7 +389,7 @@ module.exports = {
                 source: "user.model.js",
                 function: "clearPasswordResetToken",
                 error: error.message,
-                email: email
+                code: error.code,
             });
             return false;
         }
@@ -446,7 +405,6 @@ module.exports = {
                 `UPDATE users SET password_hash = ?, updated_at = ? WHERE email = ? AND is_deleted = 0`,
                 [hashedPassword, moment().format("YYYY-MM-DD HH:mm:ss"), email]
             );
-            
             return { success: result.affectedRows > 0 };
         } catch (error) {
             return { success: false, msg: error.message };
@@ -463,7 +421,6 @@ module.exports = {
                 `UPDATE users SET password_hash = ?, updated_at = ? WHERE user_id = ? AND is_deleted = 0`,
                 [hashedPassword, moment().format("YYYY-MM-DD HH:mm:ss"), userId]
             );
-            
             return { success: result.affectedRows > 0 };
         } catch (error) {
             return { success: false, msg: error.message };
@@ -476,22 +433,18 @@ module.exports = {
     verifyPassword: async (userId, currentPassword) => {
         try {
             const result = await db.getResults(
-                `SELECT password_hash AS password FROM users WHERE user_id = ? AND is_deleted = 0`,
+                `SELECT password_hash FROM users WHERE user_id = ? AND is_deleted = 0`,
                 [userId]
             );
-            
-            if (!result || result.length === 0) {
-                return false;
-            }
-            
-            const user = result[0];
-            return await verifyPassword(currentPassword, user.password);
+            if (!result || result.length === 0) return false;
+            return await verifyPassword(currentPassword, result[0].password_hash);
         } catch (error) {
             winston.error(`Error verifying password: ${error.message}`, {
                 source: "user.model.js",
                 function: "verifyPassword",
                 error: error.message,
-                userId: userId
+                code: error.code,
+                userId: userId,
             });
             return false;
         }
@@ -499,48 +452,93 @@ module.exports = {
 
     /**
      * Self-service signup
+     * @param {object} data - { username, email, password }
+     *   username → stored as `name` (the users table has no separate username column)
      */
     signupUser: async ({ username, email, password }) => {
         try {
+            // 1. Check name uniqueness (replaces old username check)
+            const existingName = await db.getResults(
+                `SELECT user_id FROM users WHERE LOWER(name) = LOWER(?) AND is_deleted = 0`,
+                [username]
+            );
+            if (existingName && existingName.length > 0) {
+                return {
+                    success: 0,
+                    status: 409,
+                    msg: `Login ID '${username}' is already taken. Please choose a different one.`,
+                };
+            }
+
+            // 2. Check email uniqueness
             const existingEmail = await db.getResults(
                 `SELECT user_id FROM users WHERE LOWER(email) = LOWER(?) AND is_deleted = 0`,
                 [email]
             );
             if (existingEmail && existingEmail.length > 0) {
-                return { success: 0, status: 409, msg: `Email '${email}' is already registered.` };
+                return {
+                    success: 0,
+                    status: 409,
+                    msg: `Email '${email}' is already registered. Please use a different email or login.`,
+                };
             }
 
+            // 3. Resolve a default role_id (role_id is NOT NULL in schema)
+            //    Use the first available role, or fall back to 1.
+            let defaultRoleId = 1;
+            try {
+                const roleRows = await db.getResults(
+                    `SELECT role_id FROM roles WHERE is_deleted = 0 ORDER BY role_id ASC LIMIT 1`
+                );
+                if (roleRows && roleRows.length > 0) defaultRoleId = roleRows[0].role_id;
+            } catch (_) { /* leave as 1 if roles table doesn't exist yet */ }
+
+            // 4. Hash password
             const hashedPassword = await hashPassword(password, security.bcryptRounds);
 
+            // 5. Insert user
             const now = moment().format("YYYY-MM-DD HH:mm:ss");
-            const result = await db.insert('users', {
-                role_id: 2,
-                name: username,
+            const result = await db.insert("users", {
+                role_id: defaultRoleId,
+                name: username,          // username field → name column
                 email: email.toLowerCase(),
                 password_hash: hashedPassword,
-                status: 'active',
+                status: "active",
                 is_deleted: 0,
                 created_at: now,
                 updated_at: now,
             });
 
             if (!result || !result.insertId) {
-                return { success: 0, status: 500, msg: 'Failed to create account.' };
+                return { success: 0, status: 500, msg: "Failed to create account. Please try again." };
             }
+
+            winston.info("New user signed up successfully", {
+                source: "user.model.js",
+                function: "signupUser",
+                userId: result.insertId,
+                username,
+                email,
+            });
 
             return {
                 success: 1,
                 status: 201,
-                msg: 'Account created successfully!',
+                msg: "Account created successfully! You can now log in.",
                 data: { userId: result.insertId, username, email },
             };
         } catch (error) {
             winston.error(`Error in signupUser: ${error.message}`, {
-                source: 'user.model.js',
-                function: 'signupUser',
-                error: error.message
+                source: "user.model.js",
+                function: "signupUser",
+                error: error.message,
+                code: error.code,
+                stack: error.stack,
             });
-            return { success: 0, status: 500, msg: error.message || 'Failed to create account.' };
+            if (error.code === "ER_DUP_ENTRY") {
+                return { success: 0, status: 409, msg: "A user with this Login ID or Email already exists." };
+            }
+            return { success: 0, status: 500, msg: error.message || "Failed to create account." };
         }
     },
 };
