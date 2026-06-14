@@ -28,9 +28,25 @@ const authMiddleware = async (req, res, next) => {
             );
         }
 
-        // Check if token exists in database FIRST (like reference backend)
-        const tokenQuery = `SELECT ujt.id, ujt.userid FROM user_jwt_tokens ujt WHERE ujt.token = ? LIMIT 1`;
-        const tokenResult = await db.getResults(tokenQuery, [token]);
+        // Check if token exists in database
+        // Support both column names: 'user_id' (new schema) and 'userid' (old schema)
+        let tokenResult;
+        try {
+            tokenResult = await db.getResults(
+                `SELECT id, user_id AS userId FROM user_jwt_tokens WHERE token = ? LIMIT 1`,
+                [token]
+            );
+        } catch (_colErr) {
+            // Fallback: table may use 'userid' column
+            try {
+                tokenResult = await db.getResults(
+                    `SELECT id, userid AS userId FROM user_jwt_tokens WHERE token = ? LIMIT 1`,
+                    [token]
+                );
+            } catch (_e) {
+                tokenResult = [];
+            }
+        }
 
         if (!tokenResult || tokenResult.length === 0) {
             winston.warn("Invalid or expired token attempt", {
@@ -45,27 +61,45 @@ const authMiddleware = async (req, res, next) => {
             );
         }
 
-        // THEN verify JWT signature and expiration
+        // Verify JWT signature and expiration
         const decoded = jwtUtils.verifyToken(token);
-
         if (!decoded) {
-            winston.warn("JWT verification failed", {
-                source: "auth.middleware.js",
-                function: "authMiddleware",
-                endpoint: req.path,
-                method: req.method,
-                token: token.substring(0, 20) + "..."
-            });
             return res.status(401).json(
                 ResponseFormatter.unauthorized("Invalid or expired token")
             );
         }
 
-        // Add user information to request object
+        // Fetch user + role from DB to populate req.user fully
+        const userRows = await db.getResults(
+            `SELECT u.user_id, u.role_id, u.name, u.email, r.name AS role_name, r.permissions
+             FROM users u
+             JOIN roles r ON r.role_id = u.role_id
+             WHERE u.user_id = ? AND u.is_deleted = 0 AND u.status = 'active'`,
+            [decoded.userId]
+        );
+
+        if (!userRows || userRows.length === 0) {
+            return res.status(401).json(
+                ResponseFormatter.unauthorized("User account not found or inactive")
+            );
+        }
+
+        const dbUser = userRows[0];
+        let permissions = dbUser.permissions || {};
+        if (typeof permissions === 'string') {
+            try { permissions = JSON.parse(permissions); } catch { permissions = {}; }
+        }
+
+        // Attach enriched user to request
         req.user = {
-            userId: decoded.userId,
-            email: decoded.email,
-            ...decoded
+            userId:     dbUser.user_id,
+            role_id:    dbUser.role_id,
+            role_name:  dbUser.role_name,
+            email:      dbUser.email,
+            name:       dbUser.name,
+            permissions,
+            // keep decoded payload too
+            ...decoded,
         };
 
         // Add token to request for potential use in logout

@@ -77,18 +77,23 @@ module.exports = {
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
             const expiry = moment.unix(decoded.exp).format("YYYY-MM-DD HH:mm:ss");
+            
+            // Remove old tokens for this user (single active session)
+            await db.getResults(`DELETE FROM user_jwt_tokens WHERE userid = ?`, [userId]);
+            
+            // Insert new token — table uses 'userid' column (not 'user_id')
             const result = await db.insert("user_jwt_tokens", {
-                user_id: userId,
+                userid: userId,
                 token: token,
                 expiry: expiry,
             });
-            return result.affectedRows ? { success: 1 } : { success: 1 }; // non-blocking
+            return result.affectedRows ? { success: 1 } : { success: 1 };
         } catch (error) {
-            // Table may not exist until migration is run — don't block login
-            winston.warn("updateToken: skipped (run migrations/support_tables.sql to enable)", {
-                error: error.message
+            winston.warn("updateToken: could not save JWT token", {
+                error: error.message,
+                userId
             });
-            return { success: 1 }; // Return success so login is not blocked
+            return { success: 1 }; // Don't block login if token table has issues
         }
     },
 
