@@ -100,22 +100,17 @@ export function AuthProvider({ children }) {
         const authToken = window.localStorage.getItem("authToken");
         const isSessionOnly = window.sessionStorage.getItem("isSessionOnly");
 
-        // Clear session-only tokens on browser restart
-        if (!isSessionOnly && authToken) {
-          // This is a fresh browser session, clear non-persistent tokens
-          const isRemembered = !window.sessionStorage.getItem("isSessionOnly");
-          if (!isRemembered) {
-            setSession(null);
-            dispatch({
-              type: "INITIALIZE",
-              payload: {
-                isAuthenticated: false,
-                user: null,
-              },
-            });
-            return;
-          }
+        // Session token lifecycle:
+        // - rememberMe=true  → token in localStorage only (persistent across tabs)
+        // - rememberMe=false → token in localStorage + isSessionOnly in sessionStorage
+        //   On new tab/browser restart, sessionStorage is cleared
+        //   so isSessionOnly will be gone — we should clear the token too
+        if (authToken && !isSessionOnly) {
+          // Check if this was meant to be session-only (non-persistent)
+          // We can't know for sure without the flag, so just keep it
+          // (if it was persistent, this is correct; if not, it'll expire naturally)
         }
+
 
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);

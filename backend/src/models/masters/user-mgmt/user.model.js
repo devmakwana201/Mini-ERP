@@ -66,7 +66,7 @@ module.exports = {
         try {
             await db.getResults(`DELETE FROM user_jwt_tokens WHERE token = ?`, [token]);
         } catch (error) {
-            winston.warn("removeToken: user_jwt_tokens may not exist yet", { error: error.message });
+            winston.warn("removeToken: failed", { error: error.message });
         }
     },
 
