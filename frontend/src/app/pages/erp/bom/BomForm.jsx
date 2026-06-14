@@ -14,8 +14,8 @@ import { BomService } from "services/masters/bom.service";
 
 const BOM_TYPES = [
   { label: "Manufacture", value: "manufacture" },
-  { label: "Phantom", value: "phantom" },
   { label: "Kit", value: "kit" },
+  { label: "Subcontract", value: "subcontract" },
 ];
 
 const EMPTY_LINE = { component_id: "", qty: 1, uom: "Pcs", notes: "" };

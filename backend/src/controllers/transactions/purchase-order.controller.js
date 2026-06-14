@@ -113,7 +113,7 @@ const poController = {
     async receive(req, res) {
         const po_id = parseInt(req.params.id);
         const created_by = req.user?.userId;
-        const { receive_lines } = req.body; // [{ pol_id, product_id, qty_received }]
+        const receive_lines = req.body.lines || req.body.receive_lines;
 
         if (!receive_lines?.length) {
             return res.status(400).json(ResponseFormatter.error("receive_lines is required", 400));

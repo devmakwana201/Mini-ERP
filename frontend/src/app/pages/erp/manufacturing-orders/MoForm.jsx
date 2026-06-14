@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "primereact/button";
-import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
@@ -10,7 +9,6 @@ import { Card } from "primereact/card";
 import { ProgressSpinner } from "primereact/progressspinner";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { InputTextarea } from "primereact/inputtextarea";
 import { ManufacturingOrderService } from "services/transactions/transactions.service";
 import { ProductService } from "services/products/product.service";
 import { BomService } from "services/masters/bom.service";
@@ -28,10 +26,11 @@ export default function MoForm() {
 
   const [form, setForm] = useState({
     product_id: null,
+    bom_id: null,
+    mo_type: "MTS",
     qty_planned: null,
-    target_date: null,
-    notes: "",
-    mo_components: [],
+    scheduled_date: null,
+    components: [],
   });
 
   useEffect(() => {
@@ -53,10 +52,13 @@ export default function MoForm() {
           const mo = res.data;
           setForm({
             product_id: mo.product_id,
+            bom_id: mo.bom_id,
+            mo_type: mo.mo_type || "MTS",
             qty_planned: mo.qty_planned,
-            target_date: mo.target_date ? new Date(mo.target_date) : null,
-            notes: mo.notes || "",
-            mo_components: mo.mo_components || [],
+            scheduled_date: mo.scheduled_date
+              ? new Date(mo.scheduled_date)
+              : null,
+            components: mo.components || [],
           });
         }
         setLoading(false);
@@ -66,46 +68,56 @@ export default function MoForm() {
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleProductChange = async (productId) => {
-    set("product_id", productId);
-
-    const product = products.find((p) => p.product_id === productId);
-    if (product && product.bom_id) {
-      const bomRes = await BomService.getById(product.bom_id);
-      if (bomRes.success) {
-        const bomItems = (bomRes.data?.lines || []).map((item) => ({
-          ...item,
-          qty_required: (item.qty_per_unit || 1) * (form.qty_planned || 1),
-        }));
-        setForm((f) => ({ ...f, mo_components: bomItems }));
-      }
+  const loadBom = async (bomId) => {
+    if (!bomId) {
+      setForm((f) => ({ ...f, bom_id: null, components: [] }));
+      return;
     }
+
+    const bomRes = await BomService.getById(bomId);
+    if (bomRes.success) {
+      setForm((f) => ({
+        ...f,
+        bom_id: bomId,
+        components: bomRes.data?.lines || [],
+      }));
+    }
+  };
+
+  const handleProductChange = async (productId) => {
+    const matchingBom = boms.find(
+      (bom) => bom.product_id === productId && bom.is_active,
+    );
+    setForm((f) => ({
+      ...f,
+      product_id: productId,
+      bom_id: matchingBom?.bom_id || null,
+      components: [],
+    }));
+    if (matchingBom) await loadBom(matchingBom.bom_id);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.product_id || !form.qty_planned) {
+    if (!form.product_id || !form.bom_id || !form.qty_planned) {
       toast.current?.show({
         severity: "warn",
         summary: "Validation",
-        detail: "Select product and quantity",
+        detail: "Select product, BOM, and quantity",
       });
       return;
     }
-    if (form.mo_components.length === 0) {
-      toast.current?.show({
-        severity: "warn",
-        summary: "Note",
-        detail: "No BOM components. MO will be created with empty components.",
-      });
-    }
-
     setSaving(true);
     const payload = {
-      ...form,
-      target_date: form.target_date
-        ? form.target_date.toISOString().split("T")[0]
+      qty_planned: form.qty_planned,
+      scheduled_date: form.scheduled_date
+        ? form.scheduled_date.toISOString().split("T")[0]
         : null,
+      ...(!isEdit && {
+        product_id: form.product_id,
+        bom_id: form.bom_id,
+        mo_type: form.mo_type,
+      }),
     };
 
     const res = isEdit
@@ -152,7 +164,7 @@ export default function MoForm() {
 
       <form onSubmit={handleSubmit}>
         <Card title="Order Info" className="mb-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-2 block text-sm font-medium">Product</label>
               <Dropdown
@@ -163,6 +175,35 @@ export default function MoForm() {
                 onChange={(e) => handleProductChange(e.value)}
                 placeholder="Select product"
                 filter
+                disabled={isEdit}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">BOM</label>
+              <Dropdown
+                value={form.bom_id}
+                options={boms.filter(
+                  (bom) => !form.product_id || bom.product_id === form.product_id,
+                )}
+                optionLabel="bom_name"
+                optionValue="bom_id"
+                onChange={(e) => loadBom(e.value)}
+                placeholder="Select BOM"
+                disabled={!form.product_id || isEdit}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Manufacturing Type
+              </label>
+              <Dropdown
+                value={form.mo_type}
+                options={[
+                  { label: "Make to Stock", value: "MTS" },
+                  { label: "Make to Order", value: "MTO" },
+                ]}
+                onChange={(e) => set("mo_type", e.value)}
+                disabled={isEdit}
               />
             </div>
             <div>
@@ -181,28 +222,19 @@ export default function MoForm() {
                 Target Date
               </label>
               <Calendar
-                value={form.target_date}
-                onChange={(e) => set("target_date", e.value)}
+                value={form.scheduled_date}
+                onChange={(e) => set("scheduled_date", e.value)}
                 showIcon
                 dateFormat="dd/mm/yy"
               />
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="mb-2 block text-sm font-medium">Notes</label>
-            <InputTextarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              rows={3}
-              placeholder="Special instructions..."
-            />
-          </div>
         </Card>
 
-        {form.mo_components.length > 0 && (
+        {form.components.length > 0 && (
           <Card title="BOM Components (Auto-calculated)" className="mb-4">
-            <DataTable value={form.mo_components} className="text-xs">
+            <DataTable value={form.components} className="text-xs">
               <Column
                 field="component_code"
                 header="Code"
@@ -210,14 +242,17 @@ export default function MoForm() {
               />
               <Column field="component_name" header="Component" />
               <Column
-                field="qty_per_unit"
+                field="qty"
                 header="Per Unit"
                 style={{ width: "80px" }}
               />
               <Column
-                field="qty_required"
                 header="Total Required"
                 style={{ width: "100px" }}
+                body={(row) =>
+                  Number(row.qty || row.qty_planned || 0) *
+                  Number(form.qty_planned || 0)
+                }
               />
               <Column field="uom" header="UOM" style={{ width: "60px" }} />
             </DataTable>

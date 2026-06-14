@@ -54,11 +54,19 @@ const updateLineSchema = Joi.object({
 /** POST /sales-orders/:id/deliver — deliver quantities */
 const deliverSchema = Joi.object({
     location_id: Joi.number().integer().allow(null).default(null),
+    // Accept both 'delivery_lines' (frontend service) and 'lines' (alternative)
+    delivery_lines: Joi.array().items(Joi.object({
+        product_id:     Joi.number().integer().required(),
+        qty_to_deliver: Joi.number().precision(3).min(0.001).required(),
+        sol_id:         Joi.number().integer().optional(),
+    })).min(1).optional(),
     lines: Joi.array().items(Joi.object({
         product_id:     Joi.number().integer().required(),
         qty_to_deliver: Joi.number().precision(3).min(0.001).required(),
-    })).min(1).required(),
-});
+        sol_id:         Joi.number().integer().optional(),
+    })).min(1).optional(),
+}).or('delivery_lines', 'lines');  // at least one must be present
+
 
 module.exports = {
     createSoSchema,

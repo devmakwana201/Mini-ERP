@@ -28,7 +28,7 @@ export default function PoForm() {
 
   const [form, setForm] = useState({
     vendor_id: null,
-    expected_delivery: null,
+    expected_date: null,
     payment_terms: "",
     notes: "",
     lines: [],
@@ -36,7 +36,7 @@ export default function PoForm() {
 
   const [newLine, setNewLine] = useState({
     product_id: null,
-    qty_required: null,
+    qty_ordered: null,
     unit_cost: null,
   });
 
@@ -59,15 +59,15 @@ export default function PoForm() {
           const po = res.data;
           setForm({
             vendor_id: po.vendor_id,
-            expected_delivery: po.expected_delivery
-              ? new Date(po.expected_delivery)
+            expected_date: po.expected_date
+              ? new Date(po.expected_date)
               : null,
             payment_terms: po.payment_terms || "",
             notes: po.notes || "",
             lines: (po.lines || []).map((l) => ({
               pol_id: l.pol_id,
               product_id: l.product_id,
-              qty_required: l.qty_required,
+              qty_ordered: l.qty_ordered,
               unit_cost: l.unit_cost,
             })),
           });
@@ -84,7 +84,7 @@ export default function PoForm() {
   const addLine = () => {
     if (
       !newLine.product_id ||
-      !newLine.qty_required ||
+      !newLine.qty_ordered ||
       newLine.unit_cost === null
     ) {
       toast.current?.show({
@@ -106,7 +106,7 @@ export default function PoForm() {
         },
       ],
     }));
-    setNewLine({ product_id: null, qty_required: null, unit_cost: null });
+    setNewLine({ product_id: null, qty_ordered: null, unit_cost: null });
   };
 
   const removeLine = (idx) => {
@@ -115,7 +115,7 @@ export default function PoForm() {
 
   const calculateTotal = () => {
     return form.lines.reduce(
-      (sum, l) => sum + (l.qty_required || 0) * (l.unit_cost || 0),
+      (sum, l) => sum + (l.qty_ordered || 0) * (l.unit_cost || 0),
       0,
     );
   };
@@ -141,16 +141,18 @@ export default function PoForm() {
 
     setSaving(true);
     const payload = {
-      ...form,
-      total_amount: calculateTotal(),
-      expected_delivery: form.expected_delivery
-        ? form.expected_delivery.toISOString().split("T")[0]
+      vendor_id: form.vendor_id,
+      notes: form.notes,
+      expected_date: form.expected_date
+        ? form.expected_date.toISOString().split("T")[0]
         : null,
-      lines: form.lines.map((l) => ({
-        product_id: l.product_id,
-        qty_required: l.qty_required,
-        unit_cost: l.unit_cost,
-      })),
+      ...(!isEdit && {
+        lines: form.lines.map((l) => ({
+          product_id: l.product_id,
+          qty_ordered: l.qty_ordered,
+          unit_cost: l.unit_cost,
+        })),
+      }),
     };
 
     const res = isEdit
@@ -215,8 +217,8 @@ export default function PoForm() {
                 Expected Delivery
               </label>
               <Calendar
-                value={form.expected_delivery}
-                onChange={(e) => set("expected_delivery", e.value)}
+                value={form.expected_date}
+                onChange={(e) => set("expected_date", e.value)}
                 showIcon
                 dateFormat="dd/mm/yy"
               />
@@ -262,8 +264,8 @@ export default function PoForm() {
             <div>
               <label className="mb-1 block text-xs font-medium">Qty</label>
               <InputNumber
-                value={newLine.qty_required}
-                onChange={(e) => setLine("qty_required", e.value)}
+                value={newLine.qty_ordered}
+                onChange={(e) => setLine("qty_ordered", e.value)}
                 placeholder="Quantity"
                 useGrouping={false}
               />
@@ -299,7 +301,7 @@ export default function PoForm() {
                 />
                 <Column field="product_name" header="Product" />
                 <Column
-                  field="qty_required"
+                  field="qty_ordered"
                   header="Qty"
                   style={{ width: "60px" }}
                 />
@@ -315,7 +317,7 @@ export default function PoForm() {
                     <span>
                       ₹
                       {(
-                        (row.qty_required || 0) * (row.unit_cost || 0)
+                        (row.qty_ordered || 0) * (row.unit_cost || 0)
                       ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
                   )}

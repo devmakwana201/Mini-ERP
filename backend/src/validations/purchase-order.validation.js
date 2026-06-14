@@ -41,6 +41,7 @@ const receiveSchema = Joi.object({
     location_id: Joi.number().integer().allow(null).default(null),
     lines: Joi.array().items(Joi.object({
         pol_id:       Joi.number().integer().required(),
+        product_id:   Joi.number().integer().required(),
         qty_received: Joi.number().precision(3).min(0.001).required(),
     })).min(1).required(),
 });

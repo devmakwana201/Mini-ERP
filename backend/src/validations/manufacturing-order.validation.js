@@ -27,6 +27,7 @@ const listMoQuerySchema = Joi.object({
     mo_type:    Joi.string().valid(...MO_TYPE),
     product_id: Joi.number().integer(),
     so_id:      Joi.number().integer(),
+    search:     Joi.string().max(200).allow('', null),
     page:       Joi.number().integer().min(1).default(1),
     limit:      Joi.number().integer().min(1).max(100).default(20),
 });

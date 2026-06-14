@@ -37,7 +37,10 @@ export default function SoDetail() {
       setSo(res.data);
       const initQties = {};
       (res.data.lines || []).forEach((l) => {
-        initQties[l.sol_id] = l.qty_required;
+        initQties[l.sol_id] = Math.max(
+          Number(l.qty) - Number(l.delivered_qty),
+          0,
+        );
       });
       setDeliveryQties(initQties);
     } else {
@@ -81,10 +84,32 @@ export default function SoDetail() {
     }
 
     setDelivering(true);
-    const delivery_lines = selectedLines.map((solId) => ({
-      sol_id: solId,
-      qty_delivered: deliveryQties[solId] || 0,
-    }));
+    const delivery_lines = selectedLines.map((solId) => {
+      const line = so.lines.find((item) => item.sol_id === solId);
+      return {
+        sol_id: solId,
+        product_id: line.product_id,
+        qty_to_deliver: Number(deliveryQties[solId]),
+      };
+    });
+
+    const invalidLine = delivery_lines.find((line) => {
+      const orderLine = so.lines.find((item) => item.sol_id === line.sol_id);
+      const remainingQty =
+        Number(orderLine.qty) - Number(orderLine.delivered_qty);
+      return line.qty_to_deliver <= 0 || line.qty_to_deliver > remainingQty;
+    });
+
+    if (invalidLine) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail:
+          "Delivery quantity must be greater than zero and within the remaining quantity",
+      });
+      setDelivering(false);
+      return;
+    }
 
     const res = await SalesOrderService.deliver(id, delivery_lines);
     if (res.success) {
@@ -231,12 +256,12 @@ export default function SoDetail() {
           />
           <Column field="product_name" header="Product" />
           <Column
-            field="qty_required"
+            field="qty"
             header="Qty Required"
             style={{ width: "100px" }}
           />
           <Column
-            field="qty_delivered"
+            field="delivered_qty"
             header="Delivered"
             style={{ width: "80px" }}
           />
@@ -260,7 +285,7 @@ export default function SoDetail() {
               <span className="font-medium">
                 ₹
                 {(
-                  (row.qty_required || 0) * (row.unit_price || 0)
+                  (row.qty || 0) * (row.unit_price || 0)
                 ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             )}
@@ -286,7 +311,7 @@ export default function SoDetail() {
             />
           </>
         )}
-        {so.status === "confirmed" && (
+        {["confirmed", "in_progress"].includes(so.status) && (
           <Button
             label="Deliver"
             icon="pi pi-truck"
@@ -328,6 +353,7 @@ export default function SoDetail() {
             >
               <Checkbox
                 checked={selectedLines.includes(line.sol_id)}
+                disabled={Number(line.qty) <= Number(line.delivered_qty)}
                 onChange={(e) => {
                   if (e.checked)
                     setSelectedLines([...selectedLines, line.sol_id]);
@@ -340,8 +366,7 @@ export default function SoDetail() {
               <div className="flex-1">
                 <p className="text-sm font-medium">{line.product_name}</p>
                 <p className="text-xs text-gray-500">
-                  Required: {line.qty_required} | Delivered:{" "}
-                  {line.qty_delivered}
+                  Required: {line.qty} | Delivered: {line.delivered_qty}
                 </p>
               </div>
               {selectedLines.includes(line.sol_id) && (
@@ -351,10 +376,12 @@ export default function SoDetail() {
                   onChange={(e) =>
                     setDeliveryQties({
                       ...deliveryQties,
-                      [line.sol_id]: parseInt(e.target.value) || 0,
+                      [line.sol_id]: parseFloat(e.target.value) || 0,
                     })
                   }
-                  max={line.qty_required - line.qty_delivered}
+                  min="0.001"
+                  step="0.001"
+                  max={Number(line.qty) - Number(line.delivered_qty)}
                   className="w-20 rounded border px-2 py-1"
                   placeholder="Qty"
                 />

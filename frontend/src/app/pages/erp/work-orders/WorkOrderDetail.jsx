@@ -53,10 +53,10 @@ export default function WorkOrderDetail() {
     }
 
     setUpdating(true);
-    const res = await WorkOrderService.updateStatus(id, {
-      status: newStatus,
-      notes,
-    });
+    const res =
+      newStatus === "in_progress"
+        ? await WorkOrderService.start(id)
+        : await WorkOrderService.complete(id);
     if (res.success) {
       toast.current?.show({
         severity: "success",
@@ -86,8 +86,8 @@ export default function WorkOrderDetail() {
   const statusSeverity = {
     pending: "info",
     in_progress: "warning",
-    completed: "success",
-    hold: "danger",
+    done: "success",
+    cancelled: "danger",
   };
   const prioritySeverity = { high: "danger", medium: "warning", low: "info" };
 
@@ -216,13 +216,13 @@ export default function WorkOrderDetail() {
       )}
 
       <div className="flex flex-wrap justify-end gap-2">
-        {wo.status !== "completed" && (
+        {!["done", "cancelled"].includes(wo.status) && (
           <Button
             label={`Update Status${wo.status === "in_progress" ? " → Complete" : ""}`}
             icon="pi pi-pencil"
             onClick={() => {
               setNewStatus(
-                wo.status === "in_progress" ? "completed" : "in_progress",
+                wo.status === "in_progress" ? "done" : "in_progress",
               );
               setStatusDialog(true);
             }}

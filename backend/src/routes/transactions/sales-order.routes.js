@@ -25,6 +25,12 @@ router.get('/stats',
     soController.getStats
 );
 
+// IMPORTANT: /from-po/:poId MUST be before /:id to avoid Express matching 'from-po' as :id
+router.post('/from-po/:poId',
+    checkPermission('sales', 'create'),
+    soController.createFromPO
+);
+
 router.get('/',
     checkPermission('sales', 'view'),
     validateQuery(listSoQuerySchema),

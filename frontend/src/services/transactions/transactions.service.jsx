@@ -89,8 +89,8 @@ export const PurchaseOrderService = {
     try { const r = await axios.post(`/purchase-orders/${id}/confirm`); return responseHandler.handleSuccess(r); }
     catch (error) { return responseHandler.handleError(error); }
   },
-  receive: async (id, receive_lines) => {
-    try { const r = await axios.post(`/purchase-orders/${id}/receive`, { receive_lines }); return responseHandler.handleSuccess(r); }
+  receive: async (id, lines) => {
+    try { const r = await axios.post(`/purchase-orders/${id}/receive`, { lines }); return responseHandler.handleSuccess(r); }
     catch (error) { return responseHandler.handleError(error); }
   },
   cancel: async (id) => {

@@ -37,7 +37,8 @@ export default function PoDetail() {
       setPo(res.data);
       const initQties = {};
       (res.data.lines || []).forEach((l) => {
-        initQties[l.pol_id] = l.qty_required - (l.qty_received || 0);
+        initQties[l.pol_id] =
+          Number(l.qty_ordered) - Number(l.qty_received || 0);
       });
       setReceivedQties(initQties);
     } else {
@@ -81,10 +82,32 @@ export default function PoDetail() {
     }
 
     setReceiving(true);
-    const receipt_lines = selectedLines.map((polId) => ({
-      pol_id: polId,
-      qty_received: receivedQties[polId] || 0,
-    }));
+    const receipt_lines = selectedLines.map((polId) => {
+      const line = po.lines.find((item) => item.pol_id === polId);
+      return {
+        pol_id: polId,
+        product_id: line.product_id,
+        qty_received: Number(receivedQties[polId]),
+      };
+    });
+
+    const invalidLine = receipt_lines.find((line) => {
+      const poLine = po.lines.find((item) => item.pol_id === line.pol_id);
+      const outstanding =
+        Number(poLine.qty_ordered) - Number(poLine.qty_received);
+      return line.qty_received <= 0 || line.qty_received > outstanding;
+    });
+
+    if (invalidLine) {
+      toast.current?.show({
+        severity: "warn",
+        summary: "Validation",
+        detail:
+          "Receipt quantity must be greater than zero and within the outstanding quantity",
+      });
+      setReceiving(false);
+      return;
+    }
 
     const res = await PurchaseOrderService.receive(id, receipt_lines);
     if (res.success) {
@@ -196,8 +219,8 @@ export default function PoDetail() {
               Expected Delivery
             </label>
             <p className="text-lg">
-              {po.expected_delivery
-                ? new Date(po.expected_delivery).toLocaleDateString()
+              {po.expected_date
+                ? new Date(po.expected_date).toLocaleDateString()
                 : "-"}
             </p>
           </div>
@@ -231,7 +254,7 @@ export default function PoDetail() {
           />
           <Column field="product_name" header="Product" />
           <Column
-            field="qty_required"
+            field="qty_ordered"
             header="Qty Required"
             style={{ width: "100px" }}
           />
@@ -260,7 +283,7 @@ export default function PoDetail() {
               <span className="font-medium">
                 ₹
                 {(
-                  (row.qty_required || 0) * (row.unit_cost || 0)
+                  (row.qty_ordered || 0) * (row.unit_cost || 0)
                 ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             )}
@@ -323,7 +346,7 @@ export default function PoDetail() {
         <div className="space-y-3">
           {(po.lines || []).map((line) => {
             const outstanding =
-              (line.qty_required || 0) - (line.qty_received || 0);
+              Number(line.qty_ordered) - Number(line.qty_received || 0);
             return (
               <div
                 key={line.pol_id}
@@ -331,6 +354,7 @@ export default function PoDetail() {
               >
                 <Checkbox
                   checked={selectedLines.includes(line.pol_id)}
+                  disabled={outstanding <= 0}
                   onChange={(e) => {
                     if (e.checked)
                       setSelectedLines([...selectedLines, line.pol_id]);
@@ -343,7 +367,7 @@ export default function PoDetail() {
                 <div className="flex-1">
                   <p className="text-sm font-medium">{line.product_name}</p>
                   <p className="text-xs text-gray-500">
-                    Required: {line.qty_required} | Received:{" "}
+                    Ordered: {line.qty_ordered} | Received:{" "}
                     {line.qty_received} | Outstanding: {outstanding}
                   </p>
                 </div>
@@ -354,9 +378,11 @@ export default function PoDetail() {
                     onChange={(e) =>
                       setReceivedQties({
                         ...receivedQties,
-                        [line.pol_id]: parseInt(e.target.value) || 0,
+                        [line.pol_id]: parseFloat(e.target.value) || 0,
                       })
                     }
+                    min="0.001"
+                    step="0.001"
                     max={outstanding}
                     className="w-20 rounded border px-2 py-1"
                     placeholder="Qty"

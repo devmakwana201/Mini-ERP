@@ -153,8 +153,8 @@ export default function MoList() {
           style={{ width: "100px" }}
         />
         <Column
-          field="qty_completed"
-          header="Completed"
+          field="qty_produced"
+          header="Produced"
           style={{ width: "80px" }}
         />
         <Column
@@ -164,8 +164,8 @@ export default function MoList() {
           style={{ width: "120px" }}
         />
         <Column
-          field="target_date"
-          header="Target Date"
+          field="scheduled_date"
+          header="Scheduled Date"
           style={{ width: "100px" }}
         />
         <Column header="Status" body={statusBody} style={{ width: "100px" }} />

@@ -12,6 +12,13 @@ const createBomSchema = Joi.object({
     qty:        Joi.number().precision(3).min(0.001).default(1),
     bom_type:   Joi.string().valid(...BOM_TYPE).default('manufacture'),
     is_active:  Joi.boolean().default(true),
+    lines: Joi.array().items(Joi.object({
+        component_id: Joi.number().integer().required(),
+        qty:          Joi.number().precision(3).min(0.001).required(),
+        uom:          Joi.string().max(20).default('Unit'),
+        operation_id: Joi.number().integer().allow(null).default(null),
+        notes:        Joi.string().max(500).allow('', null).default(null),
+    })).default([]),
 });
 
 /** PUT /bom/:id */
@@ -25,7 +32,9 @@ const updateBomSchema = Joi.object({
 /** GET /bom — query params */
 const listBomQuerySchema = Joi.object({
     product_id: Joi.number().integer(),
+    bom_type:   Joi.string().valid(...BOM_TYPE),
     is_active:  Joi.boolean(),
+    search:     Joi.string().max(200).allow('', null),
     page:       Joi.number().integer().min(1).default(1),
     limit:      Joi.number().integer().min(1).max(500).default(20),
 });
@@ -37,6 +46,7 @@ const createLineSchema = Joi.object({
     qty:          Joi.number().precision(3).min(0.001).required(),
     uom:          Joi.string().max(20).default('Unit'),
     operation_id: Joi.number().integer().allow(null).default(null),
+    notes:        Joi.string().max(500).allow('', null).default(null),
 });
 
 /** PUT /bom/:id/lines/:lineId */
@@ -44,6 +54,7 @@ const updateLineSchema = Joi.object({
     qty:          Joi.number().precision(3).min(0.001),
     uom:          Joi.string().max(20),
     operation_id: Joi.number().integer().allow(null),
+    notes:        Joi.string().max(500).allow('', null),
 });
 
 module.exports = {

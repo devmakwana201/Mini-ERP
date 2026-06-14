@@ -206,10 +206,11 @@ const soController = {
     async deliver(req, res) {
         const so_id = parseInt(req.params.id);
         const created_by = req.user?.userId;
-        const { delivery_lines } = req.body; // [{ sol_id, product_id, qty_to_deliver }]
+        // deliverSchema validates 'lines' — controller reads same field name
+        const delivery_lines = req.body.lines || req.body.delivery_lines;
 
         if (!delivery_lines || !Array.isArray(delivery_lines) || delivery_lines.length === 0) {
-            return res.status(400).json(ResponseFormatter.error("delivery_lines array is required", 400));
+            return res.status(400).json(ResponseFormatter.error("delivery lines array is required", 400));
         }
 
         try {

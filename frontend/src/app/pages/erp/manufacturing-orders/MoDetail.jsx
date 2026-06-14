@@ -19,6 +19,7 @@ export default function MoDetail() {
   const [mo, setMo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -34,7 +35,12 @@ export default function MoDetail() {
     const res = await ManufacturingOrderService.getById(id);
     if (res.success) {
       setMo(res.data);
-      setQtyCompleted(res.data.qty_completed || 0);
+      setQtyCompleted(
+        Math.max(
+          Number(res.data.qty_planned) - Number(res.data.qty_produced),
+          0,
+        ),
+      );
     } else {
       toast.current?.show({
         severity: "error",
@@ -65,8 +71,29 @@ export default function MoDetail() {
     setConfirming(false);
   };
 
+  const handleStart = async () => {
+    setStarting(true);
+    const res = await ManufacturingOrderService.start(id);
+    if (res.success) {
+      toast.current?.show({
+        severity: "success",
+        summary: "Started",
+        detail: "Manufacturing order started",
+      });
+      fetchDetail();
+    } else {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: res.message,
+      });
+    }
+    setStarting(false);
+  };
+
   const handleReportCompletion = async () => {
-    if (qtyCompleted <= 0 || qtyCompleted > (mo.qty_planned || 0)) {
+    const remaining = Number(mo.qty_planned) - Number(mo.qty_produced);
+    if (qtyCompleted <= 0 || qtyCompleted > remaining) {
       toast.current?.show({
         severity: "warn",
         summary: "Validation",
@@ -76,9 +103,7 @@ export default function MoDetail() {
     }
 
     setReporting(true);
-    const res = await ManufacturingOrderService.reportCompletion(id, {
-      qty_completed: qtyCompleted,
-    });
+    const res = await ManufacturingOrderService.produce(id, qtyCompleted);
     if (res.success) {
       toast.current?.show({
         severity: "success",
@@ -136,7 +161,7 @@ export default function MoDetail() {
     cancelled: "danger",
   };
   const progress = mo.qty_planned
-    ? Math.round((mo.qty_completed / mo.qty_planned) * 100)
+    ? Math.round((mo.qty_produced / mo.qty_planned) * 100)
     : 0;
 
   return (
@@ -190,8 +215,8 @@ export default function MoDetail() {
               Target Date
             </label>
             <p className="text-lg">
-              {mo.target_date
-                ? new Date(mo.target_date).toLocaleDateString()
+              {mo.scheduled_date
+                ? new Date(mo.scheduled_date).toLocaleDateString()
                 : "-"}
             </p>
           </div>
@@ -203,7 +228,7 @@ export default function MoDetail() {
               Production Progress
             </label>
             <span className="text-sm font-bold">
-              {mo.qty_completed || 0} / {mo.qty_planned} ({progress}%)
+              {mo.qty_produced || 0} / {mo.qty_planned} ({progress}%)
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-gray-300">
@@ -224,9 +249,9 @@ export default function MoDetail() {
         )}
       </Card>
 
-      {mo.mo_components && mo.mo_components.length > 0 && (
+      {mo.components && mo.components.length > 0 && (
         <Card title="BOM Components" className="mb-4">
-          <DataTable value={mo.mo_components} className="text-sm">
+          <DataTable value={mo.components} className="text-sm">
             <Column
               field="component_code"
               header="Code"
@@ -234,12 +259,7 @@ export default function MoDetail() {
             />
             <Column field="component_name" header="Component" />
             <Column
-              field="qty_per_unit"
-              header="Per Unit"
-              style={{ width: "80px" }}
-            />
-            <Column
-              field="qty_required"
+              field="qty_planned"
               header="Required"
               style={{ width: "80px" }}
             />
@@ -252,7 +272,7 @@ export default function MoDetail() {
               header="Status"
               body={(row) => {
                 const consumed = row.qty_consumed || 0;
-                const required = row.qty_required || 0;
+                const required = row.qty_planned || 0;
                 if (consumed >= required)
                   return (
                     <Tag
@@ -296,7 +316,16 @@ export default function MoDetail() {
             />
           </>
         )}
-        {(mo.status === "confirmed" || mo.status === "in_progress") && (
+        {mo.status === "confirmed" && (
+          <Button
+            label="Start"
+            icon="pi pi-play"
+            loading={starting}
+            onClick={handleStart}
+            className="p-button-info"
+          />
+        )}
+        {mo.status === "in_progress" && (
           <Button
             label="Report Completion"
             icon="pi pi-check-circle"
@@ -339,11 +368,11 @@ export default function MoDetail() {
               value={qtyCompleted}
               onChange={(e) => setQtyCompleted(e.value)}
               min={0}
-              max={mo.qty_planned}
+              max={Number(mo.qty_planned) - Number(mo.qty_produced)}
               placeholder="Enter completed quantity"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Planned: {mo.qty_planned} | Current: {mo.qty_completed || 0}
+              Planned: {mo.qty_planned} | Produced: {mo.qty_produced || 0}
             </p>
           </div>
         </div>

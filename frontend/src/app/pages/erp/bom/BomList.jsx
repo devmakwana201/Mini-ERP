@@ -12,8 +12,8 @@ import { BomService } from "services/masters/bom.service";
 const BOM_TYPES = [
   { label: "All Types", value: "" },
   { label: "Manufacture", value: "manufacture" },
-  { label: "Phantom", value: "phantom" },
   { label: "Kit", value: "kit" },
+  { label: "Subcontract", value: "subcontract" },
 ];
 
 export default function BomList() {

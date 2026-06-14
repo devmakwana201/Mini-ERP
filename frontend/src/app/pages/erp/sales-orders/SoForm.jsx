@@ -36,7 +36,7 @@ export default function SoForm() {
 
   const [newLine, setNewLine] = useState({
     product_id: null,
-    qty_required: null,
+    qty: null,
     unit_price: null,
   });
 
@@ -65,7 +65,7 @@ export default function SoForm() {
             lines: (so.lines || []).map((l) => ({
               sol_id: l.sol_id,
               product_id: l.product_id,
-              qty_required: l.qty_required,
+              qty: l.qty,
               unit_price: l.unit_price,
             })),
           });
@@ -80,7 +80,7 @@ export default function SoForm() {
     setNewLine((l) => ({ ...l, [field]: value }));
 
   const addLine = () => {
-    if (!newLine.product_id || !newLine.qty_required || !newLine.unit_price) {
+    if (!newLine.product_id || !newLine.qty || newLine.unit_price == null) {
       toast.current?.show({
         severity: "warn",
         summary: "Validation",
@@ -100,7 +100,7 @@ export default function SoForm() {
         },
       ],
     }));
-    setNewLine({ product_id: null, qty_required: null, unit_price: null });
+    setNewLine({ product_id: null, qty: null, unit_price: null });
   };
 
   const removeLine = (idx) => {
@@ -109,7 +109,7 @@ export default function SoForm() {
 
   const calculateTotal = () => {
     return form.lines.reduce(
-      (sum, l) => sum + (l.qty_required || 0) * (l.unit_price || 0),
+      (sum, l) => sum + (l.qty || 0) * (l.unit_price || 0),
       0,
     );
   };
@@ -135,16 +135,19 @@ export default function SoForm() {
 
     setSaving(true);
     const payload = {
-      ...form,
-      total_amount: calculateTotal(),
+      customer_id: form.customer_id,
+      so_type: form.so_type,
+      notes: form.notes,
       delivery_date: form.delivery_date
         ? form.delivery_date.toISOString().split("T")[0]
         : null,
-      lines: form.lines.map((l) => ({
-        product_id: l.product_id,
-        qty_required: l.qty_required,
-        unit_price: l.unit_price,
-      })),
+      ...(!isEdit && {
+        lines: form.lines.map((l) => ({
+          product_id: l.product_id,
+          qty: l.qty,
+          unit_price: l.unit_price,
+        })),
+      }),
     };
 
     const res = isEdit
@@ -260,8 +263,8 @@ export default function SoForm() {
             <div>
               <label className="mb-1 block text-xs font-medium">Qty</label>
               <InputNumber
-                value={newLine.qty_required}
-                onChange={(e) => setLine("qty_required", e.value)}
+                value={newLine.qty}
+                onChange={(e) => setLine("qty", e.value)}
                 placeholder="Quantity"
                 useGrouping={false}
               />
@@ -297,7 +300,7 @@ export default function SoForm() {
                 />
                 <Column field="product_name" header="Product" />
                 <Column
-                  field="qty_required"
+                  field="qty"
                   header="Qty"
                   style={{ width: "60px" }}
                 />
@@ -313,7 +316,7 @@ export default function SoForm() {
                     <span>
                       ₹
                       {(
-                        (row.qty_required || 0) * (row.unit_price || 0)
+                        (row.qty || 0) * (row.unit_price || 0)
                       ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
                   )}

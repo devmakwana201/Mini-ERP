@@ -162,7 +162,7 @@ export default function WorkCenterList() {
           </div>
           <div className="flex gap-2 justify-end">
             <Button label="Cancel" outlined severity="secondary" onClick={() => setWcDialog(false)} />
-            <Button label={saving ? "Saving..." : "Save"} onClick={saveWc} disabled={saving || !wcForm.name} />
+            <Button label={saving ? "Saving..." : "Save"} onClick={saveWc} disabled={saving || !wcForm.name || !wcForm.code} />
           </div>
         </div>
       </Dialog>
@@ -202,7 +202,7 @@ export default function WorkCenterList() {
           </div>
           <div className="flex gap-2 justify-end">
             <Button label="Cancel" outlined severity="secondary" onClick={() => setOpDialog(false)} />
-            <Button label={saving ? "Saving..." : "Save"} onClick={saveOp} disabled={saving || !opForm.name || !opForm.work_center_id} />
+            <Button label={saving ? "Saving..." : "Save"} onClick={saveOp} disabled={saving || !opForm.name || !opForm.code || !opForm.work_center_id} />
           </div>
         </div>
       </Dialog>

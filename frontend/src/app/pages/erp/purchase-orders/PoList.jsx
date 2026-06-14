@@ -155,7 +155,7 @@ export default function PoList() {
           style={{ width: "120px" }}
         />
         <Column
-          field="expected_delivery"
+          field="expected_date"
           header="Expected Delivery"
           style={{ width: "120px" }}
         />
