@@ -37,7 +37,7 @@ export default function BomForm() {
       setLoading(true);
       BomService.getById(id).then((res) => {
         if (res.success) {
-          const b = res.data.data;
+          const b = res.data;
           setForm({ product_id: b.product_id, bom_name: b.bom_name, bom_type: b.bom_type, qty: b.qty, is_active: Boolean(b.is_active) });
           if (b.lines?.length) {
             setLines(b.lines.map((l) => ({ component_id: l.component_id, qty: l.qty, uom: l.component_uom || l.uom || "Pcs", notes: l.notes || "" })));

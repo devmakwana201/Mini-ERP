@@ -25,7 +25,8 @@ export default function BomDetail() {
   const load = async () => {
     setLoading(true);
     const res = await BomService.getById(id);
-    if (res.success) setBom(res.data.data);
+    if (res.success) setBom(res.data);
+
     else toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     setLoading(false);
   };

@@ -31,7 +31,8 @@ export default function BomList() {
     const params = { page, limit: 20, search };
     if (bomType) params.bom_type = bomType;
     const res = await BomService.getAll(params);
-    if (res.success) { setBoms(res.data.data || []); setTotal(res.data.pagination?.total || 0); }
+    if (res.success) { setBoms(res.data || []); setTotal(res.pagination?.total || 0); }
+
     else toast.current?.show({ severity: "error", summary: "Error", detail: res.message });
     setLoading(false);
   };
