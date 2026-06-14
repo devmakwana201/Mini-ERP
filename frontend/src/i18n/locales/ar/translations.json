@@ -96,6 +96,24 @@
       "customer-issues": "Customer Issues",
       "grn-issues": "GRN Issues",
       "credit-notes": "Credit Notes"
+    },
+    "erp": {
+      "erp": "ERP",
+      "dashboard": "لوحة ERP",
+      "partners": "الشركاء",
+      "bom": "قائمة المواد",
+      "products": "المنتجات",
+      "sales-orders": "طلبات البيع",
+      "purchase-orders": "أوامر الشراء",
+      "manufacturing-orders": "أوامر التصنيع",
+      "work-orders": "أوامر العمل",
+      "inventory": "المخزون",
+      "inventory.stock": "نظرة عامة على المخزون",
+      "inventory.transactions": "المعاملات",
+      "inventory.reservations": "الحجوزات",
+      "inventory.warehouses": "المستودعات",
+      "procurement-rules": "قواعد الشراء",
+      "audit-logs": "سجلات التدقيق"
     }
   }
 }

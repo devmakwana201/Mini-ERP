@@ -113,6 +113,24 @@
       "customer-issues": "Customer Issues",
       "grn-issues": "GRN Issues",
       "credit-notes": "Credit Notes"
+    },
+    "erp": {
+      "erp": "ERP",
+      "dashboard": "ERP Dashboard",
+      "partners": "Partners",
+      "bom": "Bill of Materials",
+      "products": "Products",
+      "sales-orders": "Sales Orders",
+      "purchase-orders": "Purchase Orders",
+      "manufacturing-orders": "Manufacturing Orders",
+      "work-orders": "Work Orders",
+      "inventory": "Inventory",
+      "inventory.stock": "Stock Overview",
+      "inventory.transactions": "Transactions",
+      "inventory.reservations": "Reservations",
+      "inventory.warehouses": "Warehouses",
+      "procurement-rules": "Procurement Rules",
+      "audit-logs": "Audit Logs"
     }
   }
 }
